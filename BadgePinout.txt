@@ -1,0 +1,17 @@
+TX->TX
+RX->RX
+GPIO 05-> SDA Screen
+GPIO 04-> IR RX
+GPIO 00-> Pull UP -> Program Button -> Shift IN Latch Pin ( ST_CP )
+GPIO 02-> SCL Screen
+GPIO 15-> Pull Down -> Shift IN Clock ( SH_CP )
+GND-> -ve
+RST-> Reset Button
+ADC-> (Temp Sensor?)
+EN-> +ve
+GPIO 16-> Shift IN Data Pin
+GPIO 14-> Shift OUT Clock Pin ( SH_CP )
+GPIO 12-> Shift OUT Latch Pin ( ST_CP )
+GPIO 13-> Shift OUT Data Pin
+VCC-> +ve
+GPIO 10-> 10k -> IR LED
