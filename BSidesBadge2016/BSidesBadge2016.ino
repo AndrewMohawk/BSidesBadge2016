@@ -182,18 +182,64 @@ void initWiFi()
   }
 }
 
-String makeHTTPRequest(String URL)
+void makeHTTPRequest(String URL)
 {
-  if (WiFi.status() != WL_CONNECTED) 
+  String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
+  if (WiFi.status() == WL_CONNECTED) 
   {
-      http.begin(URL); 
-      // start connection and send HTTP header
+      // Lets get the hash
+      http.begin(hashEndPoint); 
       int httpCode = http.GET();
       if(httpCode > 0) 
       {
+          //Serial.printf("[HTTP1] GET... code: %d\n", httpCode);
+          // file found at server
+          if(httpCode == HTTP_CODE_OK) 
+          {
+              String hashkey = http.getString();
+              Serial.println("Got hash:" + hashkey);
+              http.end();
+
+
+              http.begin(URL); 
+                    
+              // start connection and send HTTP header
+              int httpCode = http.GET();
+              if(httpCode > 0) 
+              {
+                  // HTTP header has been send and Server response header has been handled
+                  //Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+                  // file found at server
+                  if(httpCode == HTTP_CODE_OK) 
+                  {
+                      String payload = http.getString();
+                      Serial.println("Got Payload:" + payload);
+                      String decoded = decodeShift(payload,hashkey);
+                      Serial.println("Decryped: " + decoded);
+                  }
+              } 
+              else 
+              {
+                  //Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+              }
+              http.end();
+              
+          }
+      }
+      else
+      {
+        Serial.println("Got no response.");
+      }
+      
+      
+      http.begin(URL); 
+      
+      // start connection and send HTTP header
+      httpCode = http.GET();
+      if(httpCode > 0) 
+      {
           // HTTP header has been send and Server response header has been handled
-          Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-    
+          //Serial.printf("[HTTP] GET... code: %d\n", httpCode);
           // file found at server
           if(httpCode == HTTP_CODE_OK) 
           {
@@ -203,9 +249,13 @@ String makeHTTPRequest(String URL)
       } 
       else 
       {
-          Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+          //Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
       }
       http.end();
+  }
+  else
+  {
+    initWiFi();
   }
 }
 
@@ -232,6 +282,31 @@ void setup() {
   
 
 }
+
+String decodeShift(String input, String key)
+{
+  //this is our shift
+  int keyLen = key.length();
+  int inputLen = input.length();
+  Serial.println("Decoding...");
+  String output = "";
+  for(int i=0; i<inputLen;i++)
+  {
+    char thisChar = input.charAt(i);
+    //Serial.print("Char:");Serial.print(thisChar);
+    int thisCharInt = (int)thisChar;
+    //Serial.print(" Int:");Serial.print(thisCharInt);
+    
+    int outCharInt = thisCharInt + keyLen;
+    //Serial.print(" OutInt:");Serial.print(outCharInt);
+    output = output + ((char)outCharInt);
+    //Serial.print(" OutChar:");Serial.print((char)outCharInt);Serial.println("!");
+  }
+  return output;
+  //return (String)"This isnt it";
+  
+}
+
 
 void loop() {
   // put your main code here, to run repeatedly:
