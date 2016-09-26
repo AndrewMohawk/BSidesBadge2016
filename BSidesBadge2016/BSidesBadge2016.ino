@@ -1,3 +1,6 @@
+/* JSON Parser */
+#include <ArduinoJson.h>
+
 /* ESP8266 WiFi */
 #include "ESP8266WiFi.h"
 #include <ESP8266mDNS.h>
@@ -29,8 +32,11 @@ decode_results results;
 
 
 /* Shift Out ( 74HC595 ) */
-const int latchPin = 12;
-const int clockPin = 14;
+//Pin connected to latch pin (ST_CP) of 74HC595
+const int latchPin = 14;
+//Pin connected to clock pin (SH_CP) of 74HC595
+const int clockPin = 12;
+//Pin connected to Data in (DS) of 74HC595
 const int dataPin = 13;
 
 /* Shift In  */
@@ -56,11 +62,17 @@ struct WiFiSettings {
 
 uint8_t MAC_array[6];
 char MAC_char[18];
+
+// Badge connect details
+//String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
+String hashEndPoint = "http://10.85.0.241/badge/fetchHash.php";
+String badgeName = "";
 /*
  * Connects to Wifi Network and tries for <attempts> seconds
  */
 boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
 {
+  
   Serial.print("[+] Connecting to network:");Serial.print(wSSID);Serial.print("-- password:");Serial.print(wPassword);Serial.println(".");
   WiFi.begin(wSSID, wPassword);
   while (WiFi.status() != WL_CONNECTED) 
@@ -74,10 +86,18 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
       return false;
     }
   }
+  
   Serial.println("PASSED.");
- 
-
   WiFi.macAddress(MAC_array);
+  
+  
+ for (int i = 0; i < sizeof(MAC_array); ++i){
+  badgeName = badgeName + MAC_array[i];
+ }
+  Serial.println("BadgeNumber:");
+  Serial.println(badgeName);
+  
+
   
   Serial.print("MAC Address:");
   for (int i = 0; i < sizeof(MAC_array); ++i){
@@ -182,13 +202,14 @@ void initWiFi()
   }
 }
 
-void makeHTTPRequest(String URL)
+String makeHTTPRequest(String URL)
 {
-  String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
+  String decoded = "";
+  URL = URL + "?badge=" + badgeName;
   if (WiFi.status() == WL_CONNECTED) 
   {
       // Lets get the hash
-      http.begin(hashEndPoint); 
+      http.begin(hashEndPoint + "?badge=" + badgeName);
       int httpCode = http.GET();
       if(httpCode > 0) 
       {
@@ -197,7 +218,7 @@ void makeHTTPRequest(String URL)
           if(httpCode == HTTP_CODE_OK) 
           {
               String hashkey = http.getString();
-              Serial.println("Got hash:" + hashkey);
+              Serial.println("[+] Got Key for decoding:" + hashkey);
               http.end();
 
 
@@ -213,9 +234,10 @@ void makeHTTPRequest(String URL)
                   if(httpCode == HTTP_CODE_OK) 
                   {
                       String payload = http.getString();
-                      Serial.println("Got Payload:" + payload);
-                      String decoded = decodeShift(payload,hashkey);
-                      Serial.println("Decryped: " + decoded);
+                      Serial.println("[+] Got Payload:" + payload);
+                      decoded = decodeShift(payload,hashkey);
+                      Serial.println("[+] Decryped: " + decoded);
+                      //return decoded;
                   }
               } 
               else 
@@ -232,56 +254,166 @@ void makeHTTPRequest(String URL)
       }
       
       
-      http.begin(URL); 
-      
-      // start connection and send HTTP header
-      httpCode = http.GET();
-      if(httpCode > 0) 
-      {
-          // HTTP header has been send and Server response header has been handled
-          //Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-          // file found at server
-          if(httpCode == HTTP_CODE_OK) 
-          {
-              String payload = http.getString();
-              Serial.println(payload);
-          }
-      } 
-      else 
-      {
-          //Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-      }
-      http.end();
   }
   else
   {
     initWiFi();
   }
+
+  return decoded;
+}
+
+/*
+ * Draw a progress bar on the screen
+ */
+
+void drawProgressBar(int from, int to, String statusMessage, int progdelay = 5 ) {
+  display.clear();
+  display.setFont(ArialMT_Plain_10);
+  for (int countUp = from;countUp <= to;countUp++)
+  {
+    display.clear();
+    int progress = (countUp);
+    // draw the progress bar
+    display.drawProgressBar(0, 32, 120, 10, progress);
+  
+    // draw the percentage as String
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.drawString(64, 15, statusMessage + " " + String(progress) + "%");
+    display.display();
+    delay(progdelay);
+  }
+}
+
+void writeShift(byte curb)
+{
+  digitalWrite(latchPin, LOW); 
+  shiftOut(dataPin, clockPin,MSBFIRST,  curb); 
+  digitalWrite(latchPin, HIGH);
+}
+
+void registerWrite(int whichPin, int whichState) {
+// the bits you want to send
+  byte bitsToSend = 0;
+  Serial.println("Setting " + String(whichPin) + " to High");
+  // turn off the output so the pins don't light up
+  // while you're shifting bits:
+  digitalWrite(latchPin, LOW);
+
+  // turn on the next highest bit in bitsToSend:
+  bitWrite(bitsToSend, whichPin, whichState);
+
+  // shift the bits out:
+  shiftOut(dataPin, clockPin, MSBFIRST, bitsToSend);
+
+    // turn on the output so the LEDs can light up:
+  digitalWrite(latchPin, HIGH);
+  //delay(100);
+
 }
 
 /*
  * Main Setup for badge.
  */
 void setup() {
+
+/* shift out */
+  pinMode(latchPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);  
+  pinMode(clockPin, OUTPUT);
+  
+  
+  
+  
+  display.init();
+  display.setFont(ArialMT_Plain_10);
+  if(debug == true)
+  {
+    Serial.println("[+] Display Initialised");
+  }
+
+  drawProgressBar(0, 10, "Display Init..",50);
   //Setup Serial Connection at ESP debug speed ( so we get debug information as well )
   Serial.begin(74880);
   
   //Setup EEPROM - 512 bytes!
   EEPROM.begin(512);
+
+  drawProgressBar(10, 20, "EEPROM ..",50);
   
+  drawProgressBar(20, 30, "Serial ..",50);
   if(debug == true)
   {
     Serial.println("Starting Badge...");
     Serial.println("[+] Connecting to default WiFi");
   }
-
+  
+  drawProgressBar(30, 50, "Connecting to Wifi..",100);
   initWiFi(); // Initialise WiFi
+  
+  drawProgressBar(50, 60, "Joining network..",100);
+  fetchStatus(); // fetch network status
+  int fetchStatusEvent = t.every(15000, fetchStatus); // Set it to run every 15 seconds after this
+  
 
-  makeHTTPRequest("http://badges2016.andrewmohawk.com/");
-    
+  drawProgressBar(60, 70, "Configuring AI",75);
+  drawProgressBar(70, 80, "Hacking Planet..",75);
+  for(int i=0;i<=8;i++)
+  {
+    registerWrite(i,1);
+    delay(100);
+  }
+  drawProgressBar(80, 90, "Starting nice game",75);
+  drawProgressBar(90, 100, "...of chess...",50);
   
 
 }
+
+void fetchStatus()
+{
+  String statusURL = "http://10.85.0.241/badge/fetchStatus.php";
+  String statusResult = makeHTTPRequest(statusURL);
+  if(statusResult != "")
+  {
+    
+    StaticJsonBuffer<200> jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(statusResult);
+
+    if (!root.success()) 
+    {
+        Serial.println("[!] parseObject() failed");
+        return;
+    }
+    
+    byte shift = root["shift"];
+    String statusmsg          = root["statusmsg"];
+    JsonArray& challengesWon    = root["challenges"];
+    
+
+    Serial.println(shift,BIN);
+    writeShift(shift);
+    Serial.println(statusmsg);
+
+    for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
+    {
+        // *it contains the JsonVariant which can be casted as usuals
+        const char* value = *it;
+        Serial.print("[+] Won Challenge:");Serial.println(value);
+        // this also works: 
+        //value = it->as<const char*>();    
+    
+    }
+   
+    
+  }
+  else
+  {
+    Serial.println("[!] Error! invalid status!");
+  }
+  
+  
+}
+
 
 String decodeShift(String input, String key)
 {
@@ -310,5 +442,5 @@ String decodeShift(String input, String key)
 
 void loop() {
   // put your main code here, to run repeatedly:
-
+  t.update();
 }
