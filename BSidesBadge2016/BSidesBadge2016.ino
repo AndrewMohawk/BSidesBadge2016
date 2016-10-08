@@ -50,8 +50,8 @@ HTTPClient http;
 
 boolean debug = true;
 
-char defaultSSID[32]     = "SSID";
-char defaultPassword[32] = "Password";
+char defaultSSID[32]     = "EmpireRecords_Devices";
+char defaultPassword[32] = "loldevices";
 
 
 struct WiFiSettings {
@@ -65,7 +65,8 @@ char MAC_char[18];
 
 // Badge connect details
 //String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
-String hashEndPoint = "http://10.85.0.241/badge/fetchHash.php";
+String hashEndPoint = "http://10.85.0.200:8000/gethash/";
+String checkInEndPoint = "http://10.85.0.200:8000/checkin/";
 String badgeName = "";
 /*
  * Connects to Wifi Network and tries for <attempts> seconds
@@ -123,7 +124,7 @@ void initWiFi()
 {
   // Try connect to the default WiFi SSID and Password
   boolean defaultConnect;
-  defaultConnect = wifiConnect(defaultSSID,defaultPassword,1);
+  defaultConnect = wifiConnect(defaultSSID,defaultPassword,30);
 
   
   if(defaultConnect == true)
@@ -205,15 +206,14 @@ void initWiFi()
 String makeHTTPRequest(String URL)
 {
   String decoded = "";
-  URL = URL + "?badge=" + badgeName;
+  URL = URL + "" + badgeName;
   if (WiFi.status() == WL_CONNECTED) 
   {
       // Lets get the hash
-      http.begin(hashEndPoint + "?badge=" + badgeName);
+      http.begin(hashEndPoint + "" + badgeName);
       int httpCode = http.GET();
       if(httpCode > 0) 
       {
-          //Serial.printf("[HTTP1] GET... code: %d\n", httpCode);
           // file found at server
           if(httpCode == HTTP_CODE_OK) 
           {
@@ -228,16 +228,12 @@ String makeHTTPRequest(String URL)
               int httpCode = http.GET();
               if(httpCode > 0) 
               {
-                  // HTTP header has been send and Server response header has been handled
-                  //Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-                  // file found at server
                   if(httpCode == HTTP_CODE_OK) 
                   {
                       String payload = http.getString();
                       Serial.println("[+] Got Payload:" + payload);
                       decoded = decodeShift(payload,hashkey);
                       Serial.println("[+] Decryped: " + decoded);
-                      //return decoded;
                   }
               } 
               else 
@@ -372,7 +368,7 @@ void setup() {
 void fetchStatus()
 {
   String statusURL = "http://10.85.0.241/badge/fetchStatus.php";
-  String statusResult = makeHTTPRequest(statusURL);
+  String statusResult = makeHTTPRequest(checkInEndPoint);
   if(statusResult != "")
   {
     
@@ -391,17 +387,20 @@ void fetchStatus()
     
 
     Serial.println(shift,BIN);
-    writeShift(shift);
+    //writeShift(shift);
+    digitalWrite(latchPin, LOW); 
+    byte curb = shift;
+    Serial.println(curb,BIN);
+    shiftOut(dataPin, clockPin,LSBFIRST,  curb); 
+    digitalWrite(latchPin, HIGH);
+
+    
     Serial.println(statusmsg);
 
     for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
     {
-        // *it contains the JsonVariant which can be casted as usuals
         const char* value = *it;
-        Serial.print("[+] Won Challenge:");Serial.println(value);
-        // this also works: 
-        //value = it->as<const char*>();    
-    
+        Serial.print("[+] Won Challenge:");Serial.println(value);   
     }
    
     
