@@ -44,6 +44,9 @@ const int pinShcp = 15; //Clock
 const int pinStcp = 0; //Latch
 const int pinDataIn = 16; // Data
 
+int badgeList[10];
+int numBadges = 0;
+
 MDNSResponder mdns;
 WiFiServer server(80);
 HTTPClient http;
@@ -65,8 +68,10 @@ char MAC_char[18];
 
 // Badge connect details
 //String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
-String hashEndPoint = "http://10.85.0.200:8000/gethash/";
-String checkInEndPoint = "http://10.85.0.200:8000/checkin/";
+//String hashEndPoint = "http://10.85.0.200:8000/gethash/";
+//String checkInEndPoint = "http://10.85.0.200:8000/checkin/";
+String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/gethash/";
+String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/checkin/";
 String badgeName = "";
 /*
  * Connects to Wifi Network and tries for <attempts> seconds
@@ -124,7 +129,7 @@ void initWiFi()
 {
   // Try connect to the default WiFi SSID and Password
   boolean defaultConnect;
-  defaultConnect = wifiConnect(defaultSSID,defaultPassword,30);
+  defaultConnect = wifiConnect(defaultSSID,defaultPassword,15);
 
   
   if(defaultConnect == true)
@@ -233,7 +238,7 @@ String makeHTTPRequest(String URL)
                       String payload = http.getString();
                       Serial.println("[+] Got Payload:" + payload);
                       decoded = decodeShift(payload,hashkey);
-                      Serial.println("[+] Decryped: " + decoded);
+                      Serial.println("[+] Decrypted: " + decoded);
                   }
               } 
               else 
@@ -246,7 +251,7 @@ String makeHTTPRequest(String URL)
       }
       else
       {
-        Serial.println("Got no response.");
+        Serial.println("[!] Got no response.");
       }
       
       
@@ -291,7 +296,7 @@ void writeShift(byte curb)
 void registerWrite(int whichPin, int whichState) {
 // the bits you want to send
   byte bitsToSend = 0;
-  Serial.println("Setting " + String(whichPin) + " to High");
+  //Serial.println("Setting " + String(whichPin) + " to High");
   // turn off the output so the pins don't light up
   // while you're shifting bits:
   digitalWrite(latchPin, LOW);
@@ -308,6 +313,27 @@ void registerWrite(int whichPin, int whichState) {
 
 }
 
+void darkness()
+{
+  for(int i=0;i<=8;i++)
+    {
+      registerWrite(i,0);
+    }
+}
+
+void twirl(int numTimes = 1)
+{
+  for(int x=0;x<numTimes;x++)
+  {
+    for(int i=0;i<=8;i++)
+    {
+      registerWrite(i,1);
+      delay(100);
+    }
+  }
+}
+
+
 /*
  * Main Setup for badge.
  */
@@ -317,7 +343,7 @@ void setup() {
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);  
   pinMode(clockPin, OUTPUT);
-  
+  darkness();
   
   
   
@@ -352,22 +378,35 @@ void setup() {
   int fetchStatusEvent = t.every(15000, fetchStatus); // Set it to run every 15 seconds after this
   
 
-  drawProgressBar(60, 70, "Configuring AI",75);
+  drawProgressBar(60, 70, "Configuring AI/IR",75);
+  irrecv.enableIRIn(); // Start the receiver
+  irsend.begin();
+  int tickEvent2 = t.every(5550, transmitBadge);
+  
   drawProgressBar(70, 80, "Hacking Planet..",75);
-  for(int i=0;i<=8;i++)
-  {
-    registerWrite(i,1);
-    delay(100);
-  }
-  drawProgressBar(80, 90, "Starting nice game",75);
+  darkness();
+  twirl();
+  
+  drawProgressBar(80, 90, "How about a nice game",75);
   drawProgressBar(90, 100, "...of chess...",50);
   
 
 }
 
+
+
+void transmitBadge()
+{
+  String txBadge = badgeName.substring(10);
+  Serial.print("[+] IR TX: ");
+  Serial.println(txBadge.toInt(),HEX);
+  irsend.sendSony(txBadge.toInt(), 32);
+ 
+}
+
 void fetchStatus()
 {
-  String statusURL = "http://10.85.0.241/badge/fetchStatus.php";
+  
   String statusResult = makeHTTPRequest(checkInEndPoint);
   if(statusResult != "")
   {
@@ -385,17 +424,18 @@ void fetchStatus()
     String statusmsg          = root["statusmsg"];
     JsonArray& challengesWon    = root["challenges"];
     
-
+    darkness();
+    twirl();
     Serial.println(shift,BIN);
     //writeShift(shift);
     digitalWrite(latchPin, LOW); 
     byte curb = shift;
-    Serial.println(curb,BIN);
+    //Serial.println(curb,BIN);
     shiftOut(dataPin, clockPin,LSBFIRST,  curb); 
     digitalWrite(latchPin, HIGH);
 
     
-    Serial.println(statusmsg);
+    //Serial.println(statusmsg);
 
     for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
     {
@@ -439,7 +479,67 @@ String decodeShift(String input, String key)
 }
 
 
+
+void dump(decode_results *results) {
+  int newBadge = results->value;
+  //Serial.println("[+] IR RX");
+
+  Serial.print("[*] IR RX: ");Serial.println(newBadge,HEX);
+
+  int count = results->rawlen;
+  if (results->decode_type == SONY) 
+  {
+    
+    if(results->bits == 32)
+    {
+      int newBadge = results->value;
+     // char charBuf[50];
+      //String(newBadge).toCharArray(charBuf, 50);
+      Serial.print("[*] Decoded Badge: ");Serial.println(newBadge,HEX);
+
+      bool seenBadge = false;
+      int i = 0;
+      for (i = 0; i <= numBadges - 1; i++)
+      {
+        if(badgeList[i] == newBadge)
+        {
+          seenBadge = true;
+        }
+      }
+
+      if(seenBadge == false)
+      {
+        
+        int thisBadgeSpot = numBadges + 1;
+        if(thisBadgeSpot == 6)
+        {
+          thisBadgeSpot = 0;
+        }
+        badgeList[thisBadgeSpot] = newBadge;
+        numBadges++;
+        Serial.println("[*] Adding as new Badge.");
+        Serial.print("[*] List count at:");Serial.println(numBadges);
+        
+      }
+      else
+      {
+       Serial.println("[*]  Already seen this badge.");
+      }
+  
+    }
+   
+   
+    
+  }
+
+}
+
+
 void loop() {
+   if (irrecv.decode(&results)) {
+    dump(&results);
+    irrecv.resume(); // Receive the next value
+  }
   // put your main code here, to run repeatedly:
   t.update();
 }

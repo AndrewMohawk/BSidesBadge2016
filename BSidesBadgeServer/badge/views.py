@@ -6,6 +6,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.http import JsonResponse
 import json
+import random
 
 class badgeGetHash(TemplateView):
 	#no
@@ -80,6 +81,10 @@ class badgeCheckin(TemplateView):
 		context["jsonResponse"] = crypted
 		#context["jsonResponse"] = '[\]^_`'
 		#context["jsonResponse"] = JsonResponse(jsonResponse)
+		
+		thisBadge.badge_salt = random.choice(['andrew', 'godie', 'lolcakes', 'noyou', 'bitches', 'fire'])
+		thisBadge.save()
+		
 		print jsonResponse
 		
 		
