@@ -14,8 +14,10 @@
 /* LCD */
 #include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
 #include "OLEDDisplayUi.h" // Include the UI lib
+#include "images.h" // Include custom images
 SSD1306  display(0x3c, 5, 2);
 OLEDDisplayUi ui     ( &display );
+
 
 /* Timer */
 #include "Timer.h"
@@ -73,6 +75,75 @@ char MAC_char[18];
 String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/gethash/";
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/checkin/";
 String badgeName = "";
+unsigned long badgeNumber;
+
+
+
+String team = "RED";
+int level = 1;
+
+void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(0, 0, "LVL:" + String(level) + "/5");
+
+  display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(128, 0, team);
+}
+
+void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // draw an xbm image.
+  // Please note that everything that should be transitioned
+  // needs to be drawn relative to x and y
+  display->drawXbm(x+1,y+1, tm_width, tm_height, tm_bits);
+}
+
+void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
+  // Besides the default fonts there will be a program to convert TrueType fonts into this format
+
+
+ display->drawXbm(x+35, y, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
+ display->setTextAlignment(TEXT_ALIGN_CENTER);
+ display->setFont(ArialMT_Plain_10);
+ display->drawString(x+60,y+40,WiFi.localIP().toString());
+
+
+}
+
+
+void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
+  // Besides the default fonts there will be a program to convert TrueType fonts into this format
+
+
+ display->drawXbm(x, y+15, skull_width, skull_height, skull_bits);
+ display->setTextAlignment(TEXT_ALIGN_RIGHT);
+ display->setFont(ArialMT_Plain_10);
+ display->drawString(x+85,y+15,"Challenge One");
+ display->drawXbm(x+95, y+15, emptyheart_width, emptyheart_height, emptyheart_bits);
+
+ display->drawXbm(x, y+30, skull_width, skull_height, skull_bits);
+ display->drawString(x+85,y+30,"Challenge Two");
+ display->drawXbm(x+95, y+30, halfheart_width, halfheart_height, halfheart_bits);
+
+ display->drawXbm(x, y+45, skull_width, skull_height, skull_bits);
+ display->drawString(x+95,y+45,"Challenge Three");
+ display->drawXbm(x+95, y+45, fullheart_width, fullheart_height, fullheart_bits);
+
+}
+// This array keeps function pointers to all frames
+// frames are the single views that slide in
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3 };
+
+// how many frames are there?
+int frameCount = 3;
+
+// Overlays are statically drawn on top of a frame eg. a clock
+OverlayCallback overlays[] = { msOverlay };
+int overlaysCount = 1;
+
 /*
  * Connects to Wifi Network and tries for <attempts> seconds
  */
@@ -92,26 +163,19 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
       return false;
     }
   }
-  
   Serial.println("PASSED.");
-  WiFi.macAddress(MAC_array);
   
-  
- for (int i = 0; i < sizeof(MAC_array); ++i){
-  badgeName = badgeName + MAC_array[i];
- }
-  Serial.println("BadgeNumber:");
-  Serial.println(badgeName);
-  
+  //Dont even ask about this fuckshow. -- seriously, >_<
+  badgeName = WiFi.macAddress();
+  badgeName.replace(":","");
+  badgeName = badgeName.substring(4);
+  char charBuf[50];
+  int str_len = badgeName.length() + 1; 
+  badgeName.toCharArray(charBuf, str_len);
+  badgeNumber = strtol(charBuf, NULL, 16);
+  badgeName = String(badgeNumber);
 
   
-  Serial.print("MAC Address:");
-  for (int i = 0; i < sizeof(MAC_array); ++i){
-    sprintf(MAC_char,"%s%02x:",MAC_char,MAC_array[i]);
-  }
-
-  Serial.println(MAC_char);
-
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   
@@ -344,6 +408,11 @@ void setup() {
   pinMode(dataPin, OUTPUT);  
   pinMode(clockPin, OUTPUT);
   darkness();
+
+/* shift in */
+pinMode(pinStcp, OUTPUT);
+ pinMode(pinShcp, OUTPUT);
+ pinMode(pinDataIn, INPUT);
   
   
   
@@ -389,19 +458,175 @@ void setup() {
   
   drawProgressBar(80, 90, "How about a nice game",75);
   drawProgressBar(90, 100, "...of chess...",50);
+
+
+
+
+   // The ESP is capable of rendering 60fps in 80Mhz mode
+  // but that won't give you much time for anything else
+  // run it in 160Mhz mode or just set it to 30 fps
+  ui.setTargetFPS(30);
+
+  // Customize the active and inactive symbol
+  //ui.setActiveSymbol(activeSymbol);
+  //ui.setInactiveSymbol(inactiveSymbol);
+ ui.disableAllIndicators();
   
+  // You can change this to
+  // TOP, LEFT, BOTTOM, RIGHT
+  ui.setIndicatorPosition(BOTTOM);
+
+  // Defines where the first frame is located in the bar.
+  ui.setIndicatorDirection(LEFT_RIGHT);
+
+  // You can change the transition that is used
+  // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
+  ui.setFrameAnimation(SLIDE_LEFT);
+
+  // Add frames
+  ui.setFrames(frames, frameCount);
+
+  // Add overlays
+  ui.setOverlays(overlays, overlaysCount);
+
+  //We dont want autoplay
+  ui.disableAutoTransition();
+
+  for (int16_t i=0; i<DISPLAY_WIDTH; i+=4) {
+    display.drawLine(0, 0, i, DISPLAY_HEIGHT-1);
+    display.display();
+    delay(10);
+  }
+  for (int16_t i=0; i<DISPLAY_HEIGHT; i+=4) {
+    display.drawLine(0, 0, DISPLAY_WIDTH-1, i);
+    display.display();
+    delay(10);
+  }
+  // Initialising the UI will init the display too.
+  ui.init();
 
 }
 
 
+void readShift()
+{
+  int inputPin = 0;
+
+  digitalWrite(pinStcp, LOW);
+  delayMicroseconds(20);
+  digitalWrite(pinStcp, HIGH);
+
+
+  inputPin = digitalRead(pinDataIn);
+  Serial.print(inputPin,BIN);
+
+  if(inputPin == 0)
+  {
+    ui.previousFrame();
+
+  }
+
+
+   for(int i=0; i < 7; i++) {
+
+     digitalWrite(pinShcp, HIGH);
+     //delayMicroseconds(0.2);
+     delay(10);
+     inputPin = digitalRead(pinDataIn);
+     Serial.print(inputPin,BIN);
+     if(inputPin == 0 && i == 0)
+     {
+       ui.nextFrame();
+     }
+     else if (inputPin == 0 && i == 1)
+     {
+      level = level + 1;
+      team = "green";
+     }
+     else if (inputPin == 0 && i == 2)
+     {
+      for(int i=0;i<8;i++)
+      {
+        registerWrite(i, HIGH);
+        delay(200);
+      }
+    registerWrite(8, LOW);
+     }
+     //digitalWrite(pinDs, inputPin);
+  //    digitalWrite(pinDs, HIGH);
+
+     digitalWrite(pinShcp, LOW);
+     //digitalWrite(myClockPin, 1);
+     //delay(10);
+   }
+   Serial.println("!");
+}
+
 
 void transmitBadge()
 {
-  String txBadge = badgeName.substring(10);
+  //String txBadge = badgeName;
+  
   Serial.print("[+] IR TX: ");
-  Serial.println(txBadge.toInt(),HEX);
-  irsend.sendSony(txBadge.toInt(), 32);
+  
+  Serial.println(badgeNumber,HEX);
+  irsend.sendSony(badgeNumber, 32);
  
+}
+
+
+void dump(decode_results *results) {
+  int newBadge = results->value;
+  //Serial.println("[+] IR RX");
+
+  Serial.print("[*] IR RX: ");Serial.println(newBadge,HEX);
+
+  int count = results->rawlen;
+  if (results->decode_type == SONY) 
+  {
+    
+    if(results->bits == 48)
+    {
+      int newBadge = results->value;
+     // char charBuf[50];
+      //String(newBadge).toCharArray(charBuf, 50);
+      Serial.print("[*] Decoded Badge: ");Serial.println(newBadge,HEX);
+
+      bool seenBadge = false;
+      int i = 0;
+      for (i = 0; i <= numBadges - 1; i++)
+      {
+        if(badgeList[i] == newBadge)
+        {
+          seenBadge = true;
+        }
+      }
+
+      if(seenBadge == false)
+      {
+        
+        int thisBadgeSpot = numBadges + 1;
+        if(thisBadgeSpot == 6)
+        {
+          thisBadgeSpot = 0;
+        }
+        badgeList[thisBadgeSpot] = newBadge;
+        numBadges++;
+        Serial.println("[*] Adding as new Badge.");
+        Serial.print("[*] List count at:");Serial.println(numBadges);
+        
+      }
+      else
+      {
+       Serial.println("[*]  Already seen this badge.");
+      }
+  
+    }
+   
+   
+    
+  }
+
 }
 
 void fetchStatus()
@@ -480,66 +705,25 @@ String decodeShift(String input, String key)
 
 
 
-void dump(decode_results *results) {
-  int newBadge = results->value;
-  //Serial.println("[+] IR RX");
-
-  Serial.print("[*] IR RX: ");Serial.println(newBadge,HEX);
-
-  int count = results->rawlen;
-  if (results->decode_type == SONY) 
-  {
-    
-    if(results->bits == 32)
-    {
-      int newBadge = results->value;
-     // char charBuf[50];
-      //String(newBadge).toCharArray(charBuf, 50);
-      Serial.print("[*] Decoded Badge: ");Serial.println(newBadge,HEX);
-
-      bool seenBadge = false;
-      int i = 0;
-      for (i = 0; i <= numBadges - 1; i++)
-      {
-        if(badgeList[i] == newBadge)
-        {
-          seenBadge = true;
-        }
-      }
-
-      if(seenBadge == false)
-      {
-        
-        int thisBadgeSpot = numBadges + 1;
-        if(thisBadgeSpot == 6)
-        {
-          thisBadgeSpot = 0;
-        }
-        badgeList[thisBadgeSpot] = newBadge;
-        numBadges++;
-        Serial.println("[*] Adding as new Badge.");
-        Serial.print("[*] List count at:");Serial.println(numBadges);
-        
-      }
-      else
-      {
-       Serial.println("[*]  Already seen this badge.");
-      }
-  
-    }
-   
-   
-    
-  }
-
-}
 
 
 void loop() {
-   if (irrecv.decode(&results)) {
+  int remainingTimeBudget = ui.update();
+
+
+  if (remainingTimeBudget > 0) {
+    // You can do some work here
+    // Don't do stuff if you are below your
+    // time budget.
+    readShift();
+    // put your main code here, to run repeatedly:
+    t.update();
+    //delay(remainingTimeBudget);
+  }
+  
+  if (irrecv.decode(&results)) {
     dump(&results);
     irrecv.resume(); // Receive the next value
   }
-  // put your main code here, to run repeatedly:
-  t.update();
+  
 }
