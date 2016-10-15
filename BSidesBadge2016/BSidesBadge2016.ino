@@ -417,6 +417,7 @@ pinMode(pinStcp, OUTPUT);
   
   
   display.init();
+  display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
   if(debug == true)
   {
@@ -504,6 +505,7 @@ pinMode(pinStcp, OUTPUT);
   }
   // Initialising the UI will init the display too.
   ui.init();
+  display.flipScreenVertically();
 
 }
 
@@ -511,7 +513,8 @@ pinMode(pinStcp, OUTPUT);
 void readShift()
 {
   int inputPin = 0;
-
+  int buttonPressedVal = 1; //Depending on how buttons are wired
+  
   digitalWrite(pinStcp, LOW);
   delayMicroseconds(20);
   digitalWrite(pinStcp, HIGH);
@@ -520,7 +523,7 @@ void readShift()
   inputPin = digitalRead(pinDataIn);
   Serial.print(inputPin,BIN);
 
-  if(inputPin == 0)
+  if(inputPin == buttonPressedVal)
   {
     ui.previousFrame();
 
@@ -534,30 +537,28 @@ void readShift()
      delay(10);
      inputPin = digitalRead(pinDataIn);
      Serial.print(inputPin,BIN);
-     if(inputPin == 0 && i == 0)
+     if(inputPin == buttonPressedVal && i == 0)
      {
-       ui.nextFrame();
+      //Serial.print("ui??");
+      ui.nextFrame();
      }
-     else if (inputPin == 0 && i == 1)
+     else if (inputPin == buttonPressedVal && i == 1)
      {
       level = level + 1;
       team = "green";
      }
-     else if (inputPin == 0 && i == 2)
+     else if (inputPin == buttonPressedVal && i == 2)
      {
       for(int i=0;i<8;i++)
       {
-        registerWrite(i, HIGH);
-        delay(200);
+        //registerWrite(i, HIGH);
+        //delay(200);
       }
-    registerWrite(8, LOW);
+    
      }
-     //digitalWrite(pinDs, inputPin);
-  //    digitalWrite(pinDs, HIGH);
 
      digitalWrite(pinShcp, LOW);
-     //digitalWrite(myClockPin, 1);
-     //delay(10);
+     delay(10);
    }
    Serial.println("!");
 }
@@ -721,7 +722,7 @@ void loop() {
     //delay(remainingTimeBudget);
   }
   
-  if (irrecv.decode(&results)) {
+ if (irrecv.decode(&results)) {
     dump(&results);
     irrecv.resume(); // Receive the next value
   }
