@@ -17,21 +17,40 @@ class Challenges(models.Model):
 
 class Badge(models.Model):
 	badge_id = models.CharField("Badge ID",unique = True,max_length=200)
-	badge_challenges = models.ForeignKey(Challenges, db_index=True,blank=True, null=True)
+	badge_challenges = models.ManyToManyField(Challenges, blank=True)
 	badge_level = models.IntegerField("Badge Level")
-	badge_nick = models.CharField("Badge Alias",unique = True,max_length=200,blank=True, null=True)
+	badge_nick = models.CharField("Badge Alias",unique = False,max_length=200,blank=True, null=True)
 	badge_salt = models.CharField("Badge Salt",max_length=200)
 	badge_team = models.ForeignKey(Team, db_index=True,related_name="team")
 	badge_status = models.CharField("Badge Status",max_length=200,default="noob")
+	def normaliseLevel(self):
+		if(self.badge_level <= 0):
+			self.badge_level = 1
+		if(self.badge_level >= 6):
+			self.badge_level = 5
 	def __unicode__(self):
 		return u'Badge [ id: %s , challenges: %s , status: %s, level: %s , nick: %s , salt: %s , team: %s ]' % (self.badge_id,self.badge_challenges,self.badge_status,self.badge_level,self.badge_nick,self.badge_salt,self.badge_team)
 
-	def createBadge(self,badgeID):
+	'''
+	@classmethod
+	def create(cls, badgeID):
+		badge = cls()
+		badge.badge_id = badgeID
+		badge.badge_challenges = []
+		badge.badge_level = 1
+		badge.badge_nick = None
+		badge.badge_salt = "Andrew"
+		badge.badge_team_id = randint(1,3)
+        # do something with the book
+		return badge
+	'''
+'''
+	def __init__(self,badgeID):
 		self.badge_id = badgeID
-		self.badge_challenges = None;
 		self.badge_level = 1
 		self.badge_nick = None
 		self.badge_salt = "Andrew"
-		self.badge_team = Team.objects.get(pk=randint(1,3))
-		self.save();
-		return self
+		self.badge_team_id = randint(1,3)
+		#self.badge_team = Team.objects.get(pk=randint(1,3))
+		#self.badge_challenges = None;
+'''

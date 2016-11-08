@@ -1,0 +1,77 @@
+{% load staticfiles %}
+{% load bootstrap %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>BSides Badge 2016 {% block title %}{% endblock %} </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    {% load staticfiles %}
+    <link rel="stylesheet" href="{% static 'css/simplex.css' %}" media="screen">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}" media="screen">
+    <script src="{% static 'js/jquery-2.2.4.min.js' %}"></script>
+    
+   
+    <style>
+      .chosen-container
+      {
+        min-width: 150px !important;
+      }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body >
+<div class="container">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+
+      <a class="navbar-brand" href="#"><span class="glyphicon glyphicon-knight"></span> &nbsp;&nbsp;BSides Badge 2016</a> 
+    </div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li ><a href="#">Dashboard</a></li>
+        <li ><a href="#">Submit Challenge Token</a></li>
+        <li ><a href="#">Add Alias to Badge</a></li>
+        
+      </ul>
+      
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#">BSides2016</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  
+{% if messages %}
+  {% for message in messages %}
+    <div  class="alert alert-dismissible alert-{% if message.tags %}{{message.tags}}{% else %}info{% endif %}">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        
+            
+                {{ message }}
+         
+       
+    </div>
+       {% endfor %}
+{% endif %}
+
+
+
+{% block content %}{% endblock %}
+
+
+</div>
+
+
+
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    
+</div>
+  </body>
+</html>

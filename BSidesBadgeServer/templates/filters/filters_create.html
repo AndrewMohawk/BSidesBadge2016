@@ -1,0 +1,58 @@
+{% extends "../templates/base.html" %}
+{% block content %}
+{% load bootstrap %}
+{% load breadcrumb_tags %}
+{% namespace request as currentSpot  %}
+<h2>{{ currentSpot.url | capfirst  }} Filter</h2><hr/>
+<div>
+  Please use the fields below to modify this transform.
+  <ul class="pager">
+   <li class="previous"><a href='{% url 'filters:filters' %}' >&larr; Back to Filters</a></li>
+  </ul>
+</div>
+
+
+<form action="" method="post" class="" novalidate=novalidate>
+    <label class="control-label  " for="id_filter_name">Filter name</label>
+    {{ form.filter_name|bootstrap_inline }}
+    
+    <label class="control-label  " for="id_filter_type">Filter Type</label>
+    {{ form.filter_type|bootstrap_inline }}
+    
+    <label class="control-label  " for="id_filter_language">Filter Language</label>
+    {{ form.filter_language|bootstrap_inline }}
+    
+    <label class="control-label  " for="id_filter_code">Filter Code</label>
+    {{ form.filter_code|bootstrap_inline }}
+    
+    
+     <div class="actions row">
+         <p class="col-md-3 col-sm-5 submit">
+
+             <input type="submit" value="{{ currentSpot.url | capfirst  }} Filter" name="_update" class="btn btn-primary" />
+         </p>
+         
+         {% csrf_token %}
+     </div>
+ </form>
+{% load staticfiles %}
+<link rel="stylesheet" href="{% static 'codemirror-5.16.0/lib/codemirror.css' %}">
+<link rel="stylesheet" href="{% static 'codemirror-5.16.0/theme/abcdef.css' %}">
+<script src="{% static 'codemirror-5.16.0/lib/codemirror.js' %}"></script>
+<script src="{% static 'codemirror-5.16.0/mode/python/python.js' %}"></script>
+<script type="text/javascript">
+  //var myCodeMirror = CodeMirror.fromTextArea(document.getElementById("id_filter_code"));
+  
+  CodeMirror.fromTextArea(document.getElementById("id_filter_code"),
+                          {
+                            "fixedGutter": true,
+                            "theme": "abcdef",
+                            "mode":"python",
+                            "smartIndent": true,
+                            "lineNumbers": true,
+                            "lineWrapping": true,
+                          }
+                          );
+    
+</script>
+{% endblock %}

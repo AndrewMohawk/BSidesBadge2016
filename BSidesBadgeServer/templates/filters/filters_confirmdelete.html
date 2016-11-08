@@ -1,0 +1,13 @@
+{% extends "../templates/base.html" %}
+{% block content %}
+{% load bootstrap %}
+<h2>Delete Filter</h2><hr/>
+
+  <div class="alert alert-dismissible alert-danger">
+  
+  <form action="" method="post">{% csrf_token %}
+    <p>Are you sure you want to delete "{{ object.filter_name }}" filter?</p>
+    <input type="submit" class="btn btn-danger" value="Confirm" />
+  </form>
+</div>
+{% endblock %}

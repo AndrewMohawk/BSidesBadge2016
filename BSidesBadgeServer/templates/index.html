@@ -1,0 +1,188 @@
+{% extends "base.html" %} {% block content %}
+    
+
+{% load staticfiles %}
+<!--<link rel="stylesheet" href="{% static 'chosen_v1.6.2/chosen.css' %}">-->
+<script src="{% static 'highcharts/code/highcharts.js' %}"></script>
+<script src="{% static 'highcharts/code/modules/exporting.js' %}"></script>
+
+<h3>Dashboard</h3><hr/>
+<div class="alert alert-dismissible alert-info">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>Heyo!</strong> This is the current state of <a href="#" class="alert-link">the game</a>.
+</div>
+
+<div class="container" >
+<div id="container" style=" width:48%; height: 400px;  float:left;"></div>
+<div id="colChart" style=" width:48%; height: 400px; float:right;"></div>
+</div>
+
+
+<script type="text/javascript">
+var currentVals = {'red':0,'green':0,'blue':0}
+$(function ()
+{
+  
+  $('#colChart').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: 0,
+            plotShadow: false,
+			type: 'column',
+			events: {
+		  	  load: function () {
+				
+				var currChart = this;
+				var series = this.series;
+				var redseries = this.series[1];
+				var greenseries = this.series[2];
+				var blueseries = this.series[0];
+		
+				setInterval(function () {
+				  
+				  red = redseries.data[0].y
+				  green = greenseries.data[0].y
+				  blue = blueseries.data[0].y
+				  if (red != currentVals['red'] ||
+					  blue != currentVals['blue'] ||
+					  green != currentVals['green'])
+				  {
+					
+					
+					  //{name: 'Blue', data: currentVals['blue']},
+					  //{name: 'Green', data: currentVals['green']}
+                    redseries.data[0].y = currentVals['red'];
+					//redseries.update();
+					greenseries.data[0].y = currentVals['green'];
+					//greenseries.update();
+					blueseries.data[0].y = currentVals['blue'];
+					//blueseries.data[0].y = 100
+					series[1].redraw();
+					series[2].redraw();
+					series[0].redraw();
+					//series[2].setData([{name: 'Red', data: currentVals['red']}],true );
+					//series.update();
+					//currChart.redraw();
+					//currChart.update();
+					
+                  }
+			     }, 1300);
+	  }},
+        },
+        title: {
+            text: 'Current Teams'
+        },
+        tooltip: {
+            headerFormat: '',
+			pointFormat: '!{series.name}!: <b>{point.y}</b>'
+        },
+		
+		
+        plotOptions: {
+            column: {
+                pointPadding: 0.2,
+                borderWidth: 0
+            }
+        },
+		colors: ['#7798BF','#DF5353', '#88bb99'],
+        series: [
+				 {name: 'Blue', data: [80]},
+				 {name: 'Red', data: [80]},
+				 {name: 'Green', data: [80]}
+            
+        ],
+		
+    });
+  
+  
+  
+    $('#container').highcharts({
+        chart: {
+            type: 'area',
+			events: {
+                    load: function () {
+
+                        // set up the updating of the chart each second
+                        var seriesred = this.series[1];
+						var seriesgreen = this.series[2];
+						var seriesblue = this.series[0];
+                        setInterval(function () {
+							//$.getJSON({% url 'dashboard:ajax' %},function (data){});
+						   $.ajax({
+						      url : '{% url 'dashboard:ajax' %}',
+						      type: "POST",
+						      data : {Type:'statusUpdate',Value:currentVals},
+	
+						      success: function(data, textStatus, jqXHR)
+							   {
+								
+								//console.log(data);
+								if (data["status"] == "update") {
+								  currentVals['red'] = data['red'];
+								  currentVals['blue'] = data['blue'];
+								  currentVals['green'] = data['green'];
+								  seriesred.addPoint(data['red'],true,true);
+								  seriesgreen.addPoint(data['green'],true,true);
+								  seriesblue.addPoint(data['blue'],true,true);
+								}
+								
+							   }
+						   });
+							
+                            
+                        }, 1000);
+                    }
+                }
+        },
+        title: {
+            text: 'Realtime Team Movement'
+        },
+        
+        
+		 xAxis: {
+
+        },
+        yAxis: {
+            title: {
+                text: 'Number of Players'
+            },
+        },
+        tooltip: {
+            pointFormat: '{series.name} contained <b>{point.y:,.0f}</b><br/>players at {point.x}'
+        },
+        plotOptions: {
+            area: {
+                pointStart: 0,
+                marker: {
+                    enabled: false,
+                    symbol: 'square',
+                    radius: 2,
+                    states: {
+                        hover: {
+                            enabled: true
+                        }
+                    }
+                }
+            }
+        },
+		//blue,red,green
+		colors: ['#7798BF','#DF5353', '#88ff99'],
+        series: [
+		{
+            name: 'Blue',
+            data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        },
+		{
+            name: 'Red',
+           data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] 
+        }, {
+            name: 'Green',
+           data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        },
+		]
+    });
+});
+		</script>
+
+
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "../templates/base.html" %}
+{% block content %}
+{% load bootstrap %}
+<h2>Edit Transform</h2><hr/>
+<div>
+  Please use the fields below to modify this transform.
+  <ul class="pager">
+   <li class="previous"><a href='{% url 'transforms:transforms' %}' >&larr; Back to Transforms</a></li>
+  </ul>
+</div>
+
+
+<form action="" method="post" class="login">
+    {{ form|bootstrap }}
+     <div class="actions row">
+         <p class="col-md-3 col-sm-5 submit">
+             <input type="submit" value="Update Transform" name="_update" class="btn btn-primary" />
+         </p>
+         
+         {% csrf_token %}
+     </div>
+ </form>
+{% endblock %}
