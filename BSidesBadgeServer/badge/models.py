@@ -11,7 +11,8 @@ class Team(models.Model):
 class Challenges(models.Model):
 	challenge_name = models.CharField("Challenge Name",unique = True,max_length=200)
 	challenge_description = models.TextField("Challenge Description")
-	challenge_pass = models.CharField("Challenge Password",unique = True,max_length=200)	
+	challenge_pass = models.CharField("Challenge Password",unique = True,max_length=200)
+	challenge_valid = models.CharField("Challenge Valid Code",default="complete",max_length=200)
 	def __unicode__(self):
 		return u'{0}'.format(self.challenge_name)
 
@@ -20,6 +21,7 @@ class Badge(models.Model):
 	badge_challenges = models.ManyToManyField(Challenges, blank=True)
 	badge_level = models.IntegerField("Badge Level")
 	badge_nick = models.CharField("Badge Alias",unique = False,max_length=200,blank=True, null=True)
+	badge_verify = models.CharField("Badge Verify Code",unique = False, null = True,max_length=200)
 	badge_salt = models.CharField("Badge Salt",max_length=200)
 	badge_team = models.ForeignKey(Team, db_index=True,related_name="team")
 	badge_status = models.CharField("Badge Status",max_length=200,default="noob")

@@ -1,0 +1,75 @@
+{% extends "base.html" %} {% block content %}
+    
+{% load bootstrap %}
+{% load staticfiles %}
+
+<h3>Submit Challenge Token</h3><hr/>
+<div class="alert alert-dismissible alert-info">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>Heyo!</strong> Please type in your badge number and challenge token. If correct your badge will update when it next syncs
+</div>
+
+<form action="" method="post" class="">
+    {{ form|bootstrap }}
+     <div class="actions row">
+         <p class="col-md-3 col-sm-5 submit">
+             <input type="submit" value="Submit Challenge Token!" name="_update" class="btn btn-primary" />
+         </p>
+         
+         {% csrf_token %}
+     </div>
+ </form>
+
+
+
+<h3 style='color: #f00'>This stuff will be removed for actual release</h3>
+<table class="table table-striped table-hover ">
+  <thead>
+  <tr>
+    <td><strong>Challenge Name</strong></td>
+    <td><strong>Challenge Description</strong></td>
+    <td><strong>Challenge Password</strong></td>
+    <td><strong>Challenge Valid Code</strong></td>
+  </tr>
+  </thead>
+{% for c in Challenges %}
+<tr>
+  <td>{{c.challenge_name}}</td>
+  <td>{{c.challenge_description}}</td>
+  <td>{{c.challenge_pass}}</td>
+  <td>{{c.challenge_valid}}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h4>Encrypt</h4>
+This will give the valid output for *all* challenges<br/><br/>
+<strong>Badge Number</strong><input type="text" name="bnumber" id='bnumber'/><br/><br/>
+<a href="#" class="btn btn-default" onclick='getCrypts();return false;'>Show Values</a><br/>
+<div id='results'>&nbsp;</div>
+<script type="text/javascript">
+  function getCrypts() {
+    //code
+  
+   $.ajax({
+    'url' : '{% url 'badge:addhash' %}',
+  //The type of request, also known as the "method" in HTML forms
+  //Can be 'GET' or 'POST'
+    'type' : 'GET',
+  //Any post-data/get-data parameters
+  //This is optional
+    'data' : {
+      'badgeNum' : $('#bnumber').val(),
+      
+    },
+  //The response from the server
+    'success' : function(data) {
+    //You can use any jQuery/JavaScript here!!!
+    console.log(data);
+      $('#results').html('<div class="alert alert-dismissible alert-success">' + data.result + '</div>');
+    }
+  });
+   }
+
+</script>
+{% endblock %}

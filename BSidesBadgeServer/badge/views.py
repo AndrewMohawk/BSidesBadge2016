@@ -1,14 +1,150 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView,FormView
 # Create your views here.
 from badge.models import *
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.http import JsonResponse
+from badge.forms import AliasForm, ChallengeForm
 import json
 import random
+from django.contrib import messages 
+from django.contrib.messages.views import SuccessMessageMixin
+from badge.models import Badge, Challenges
+
+import base64
+from Crypto.Cipher import AES
+from Crypto import Random
+
+BS = 16
+pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS) 
+unpad = lambda s : s[:-ord(s[len(s)-1:])]
+
+class AESCipher:
+	def __init__( self, key ):
+		#key = base64.b64encode(key)
+		if(len(key) > 32):
+			key = key[:32]
+		else:
+			key = key.zfill(32)
+		
+		self.key = key
+
+	
+	
+	def encrypt( self, raw ):
+		raw = pad(raw)
+		iv = Random.new().read( AES.block_size )
+		cipher = AES.new( self.key, AES.MODE_CBC, iv )
+		return base64.b64encode( iv + cipher.encrypt( raw ) ) 
+	
+	def decrypt( self, enc ):
+		enc = base64.b64decode(enc)
+		iv = enc[:16]
+		cipher = AES.new(self.key, AES.MODE_CBC, iv )
+		return unpad(cipher.decrypt( enc[16:] ))
 
 
+class badgeAddChallenge(FormView):
+	template_name = "addChallenge.html"
+	form_class = ChallengeForm
+	model = Challenges
+	
+	
+	
+	def get_context_data(self, **kwargs):
+		context = super(badgeAddChallenge, self).get_context_data(**kwargs)
+		context["Challenges"] = Challenges.objects.all()
+		return context
+	
+	def get(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badgeNum = self.request.GET.get("badgeNum")
+		results = "";
+		if(badgeNum):
+			allChallenges = Challenges.objects.all()
+			for challenge in allChallenges:
+				challenge_pw = challenge.challenge_pass
+				key = badgeNum + challenge_pw
+				result = challenge.challenge_valid
+				t = AESCipher(key)
+				encryptedString = t.encrypt(result)
+				winString = "Challenge %s: Encrypted '%s' with '%s' + '%s' to get '%s'.<br/>" % (challenge.challenge_name,result, badgeNum,challenge_pw, encryptedString)
+				results  = results + winString
+			return JsonResponse({'result':results})
+		
+		return super(badgeAddChallenge, self).render_to_response(context)
+	def post(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badgeNum = self.request.POST.get("badge_number")
+		badgeHash = self.request.POST.get("challenge_hash")
+		
+		
+		
+		thisBadge = False
+		try:
+			thisBadge = Badge.objects.get(badge_id = badgeNum)
+			if settings.DEBUG:
+				print "[+] Badge %s Found!" % (badgeNum)
+		except Badge.DoesNotExist:
+			if settings.DEBUG:
+				print "[!] Could not find badge for adding challenge %s -- exiting!" % (badgeNum)
+				
+		if(thisBadge != False):
+			allChallenges = Challenges.objects.all()
+			for challenge in allChallenges:
+				challenge_pw = challenge.challenge_pass
+				key = badgeNum + challenge_pw
+				t = AESCipher(key)
+				decrypted = False
+				try:
+					decrypted = t.decrypt(badgeHash)
+					print decrypted
+				except Exception, e:
+					messages.success(self.request, "Invalid decryption: %s" % (e))
+					
+				if(decrypted == challenge.challenge_valid):
+					messages.success(self.request, "Successfully updated badge '%s' and added challenge '%s'" % (badgeNum,challenge.challenge_name))
+				else:
+					messages.error(self.request,"Decoded string '%s' for challenge %s to did not produce correct key" % (badgeHash,challenge.challenge_name))
+			#thisBadge.badge_nick = badgeAlias
+			#thisBadge.save()
+			#messages.success(self.request, "Successfully updated badge '%s' to have alias '%s'" % (badgeNum,badgeAlias))
+		else:
+			messages.warning(self.request, "Could not find badge with ID of '%s'! Please check and try again" % (badgeNum))
+		
+		return super(badgeAddChallenge, self).render_to_response(context)
+
+class badgeAddAlias(FormView):
+	template_name = "addAlias.html"
+	form_class = AliasForm
+	model = Badge
+	
+	def post(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badgeNum = self.request.POST.get("badge_number")
+		badgeAlias = self.request.POST.get("badge_alias")
+		badgeVerify = self.request.POST.get("badge_verify")
+		thisBadge = False
+		try:
+			thisBadge = Badge.objects.get(badge_id = badgeNum,badge_verify = badgeVerify)
+			if settings.DEBUG:
+				print "[+] Badge %s Found!" % (badgeNum)
+		except Badge.DoesNotExist:
+			if settings.DEBUG:
+				print "[!] Could not find badge %s -- exiting!" % (badgeNum)
+				
+		if(thisBadge != False):
+			thisBadge.badge_nick = badgeAlias
+			thisBadge.save()
+			messages.success(self.request, "Successfully updated badge '%s' to have alias '%s'" % (badgeNum,badgeAlias))
+		else:
+			messages.warning(self.request, "Could not find badge with ID of '%s' and a Verification code of '%s' please check and try again" % (badgeNum,badgeVerify))
+		
+		return super(badgeAddAlias, self).render_to_response(context)
+		#return HttpResponse(context)
 
 class badgeGetHash(TemplateView):
 	template_name = "checkin.enc"

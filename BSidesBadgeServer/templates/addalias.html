@@ -1,0 +1,25 @@
+{% extends "base.html" %} {% block content %}
+    
+{% load bootstrap %}
+{% load staticfiles %}
+
+<h3>Add Alias</h3><hr/>
+<div class="alert alert-dismissible alert-info">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>Heyo!</strong> Please type in your badge number as well as the alias you wish to associate with it.
+</div>
+
+<form action="" method="post" class="">
+    {{ form|bootstrap }}
+     <div class="actions row">
+         <p class="col-md-3 col-sm-5 submit">
+             <input type="submit" value="Add Alias" name="_update" class="btn btn-primary" />
+         </p>
+         
+         {% csrf_token %}
+     </div>
+ </form>
+
+
+
+{% endblock %}

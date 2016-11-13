@@ -17,13 +17,14 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic import TemplateView
 #from badge import views
-from badge.views import badgeCheckin,badgeGetHash
+from badge.views import badgeCheckin,badgeGetHash, badgeAddAlias, badgeAddChallenge
 from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     url(r'checkin/(?P<badgeID>[A-Za-z0-9]+)/$', csrf_exempt(badgeCheckin.as_view()), name='checkin'),
     url(r'gethash/(?P<badgeID>[A-Za-z0-9]+)/$', csrf_exempt(badgeGetHash.as_view()), name='gethash'),
-    
+    url(r'addalias/$', badgeAddAlias.as_view(), name='addalias'),
+    url(r'addhash/$', badgeAddChallenge.as_view(), name='addhash'),
     #url(r'workbench/(?P<badgeID>[0-9]+)$', badgeGetHash.as_view(), name='workbench'),
     
 ]

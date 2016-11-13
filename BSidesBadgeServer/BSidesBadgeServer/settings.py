@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'badge.apps.BadgeConfig',
-    'bootstrapform'
+    'bootstrapform',
 ]
 
 MIDDLEWARE_CLASSES = [
