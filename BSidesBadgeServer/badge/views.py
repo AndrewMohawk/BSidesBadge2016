@@ -107,6 +107,7 @@ class badgeAddChallenge(FormView):
 					
 				if(decrypted == challenge.challenge_valid):
 					messages.success(self.request, "Successfully updated badge '%s' and added challenge '%s'" % (badgeNum,challenge.challenge_name))
+					thisBadge.badge_challenges.add(challenge)
 				else:
 					messages.error(self.request,"Decoded string '%s' for challenge %s to did not produce correct key" % (badgeHash,challenge.challenge_name))
 			#thisBadge.badge_nick = badgeAlias
