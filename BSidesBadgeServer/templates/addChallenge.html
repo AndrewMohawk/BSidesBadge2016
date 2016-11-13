@@ -47,6 +47,63 @@ This will give the valid output for *all* challenges<br/><br/>
 <strong>Badge Number</strong><input type="text" name="bnumber" id='bnumber'/><br/><br/>
 <a href="#" class="btn btn-default" onclick='getCrypts();return false;'>Show Values</a><br/>
 <div id='results'>&nbsp;</div>
+
+
+
+<h3>Encryption</h3>
+<XMP>
+  Badge encryption works as follows:
+  
+  Encrypt:
+  --------
+  Take badge number and add to secret key from challenge
+  Use this as encryption key ( padded with leading 0s to 32 characters)
+  AES Encrypt in CBC mode with a 16 char IV
+  Add IV to front of encryption and B64 encode entire thing
+  
+  Decrypt:
+  --------
+  Take badge number and add to secret key from challenge
+  Use this as encryption key ( padded with leading 0s to 32 characters)
+  Base64 decode submitted hash
+  Take first 16 chars of this as IV
+  AES Decrypt in CBC mode with these 16 as IV
+  If outputted string matches the challenges 'valid code' then we add it to badge!
+  
+</XMP>
+<h3>Python Code for Encryption/Decryption</h3>
+<XMP>
+BS = 16
+pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS) 
+unpad = lambda s : s[:-ord(s[len(s)-1:])]
+
+class AESCipher:
+	def __init__( self, key ):
+		#key = base64.b64encode(key)
+		if(len(key) > 32):
+			key = key[:32]
+		else:
+			key = key.zfill(32)
+		
+		self.key = key
+
+	
+	
+	def encrypt( self, raw ):
+		raw = pad(raw)
+		iv = Random.new().read( AES.block_size )
+		cipher = AES.new( self.key, AES.MODE_CBC, iv )
+		return base64.b64encode( iv + cipher.encrypt( raw ) ) 
+	
+	def decrypt( self, enc ):
+		enc = base64.b64decode(enc)
+		iv = enc[:16]
+		cipher = AES.new(self.key, AES.MODE_CBC, iv )
+		return unpad(cipher.decrypt( enc[16:] ))
+
+</XMP>
+
+
 <script type="text/javascript">
   function getCrypts() {
     //code
