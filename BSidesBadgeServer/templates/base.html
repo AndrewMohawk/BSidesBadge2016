@@ -33,14 +33,14 @@
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li ><a href="#">Dashboard</a></li>
-        <li ><a href="#">Submit Challenge Token</a></li>
-        <li ><a href="#">Add Alias to Badge</a></li>
+        <li ><a href="{% url 'dashboard:dashboard' %}">Dashboard</a></li>
+        <li ><a href="{% url 'badge:addhash' %}">Submit Challenge Token</a></li>
+        <li ><a href="{% url 'badge:addalias' %}">Add Alias to Badge</a></li>
         
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#">BSides2016</a></li>
+        <li><a target="_blank" href="http://www.bsidescapetown.co.za/">BSides2016</a></li>
       </ul>
     </div>
   </div>
