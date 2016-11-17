@@ -241,12 +241,13 @@ class badgeCheckin(TemplateView):
 		#context = {}
 		
 		seenBadges = json.loads(self.request.POST.get("seen"))
+		print self.request.POST.get("seen") + "!!!"
 		for badgeName in seenBadges:
 			try:
 				seenBadge = Badge.objects.get(badge_id = badgeName)
 				self.badgeFight(context["currentBadge"],seenBadge)
 				if settings.DEBUG:
-					print "[+] Badge %s Found!" % (badgeName)
+					print "[+] Badge %s found in seen list!" % (badgeName)
 			except Badge.DoesNotExist:
 				if settings.DEBUG:
 					print "[!] Error! %s has not been seen before! Not saving!" % (badgeName)
