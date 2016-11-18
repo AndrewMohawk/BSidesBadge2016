@@ -1,1 +1,0 @@
-[{"model": "badge.team", "pk": 1, "fields": {"team_name": "RedTeam", "team_binary": 128}}, {"model": "badge.team", "pk": 2, "fields": {"team_name": "GreenTeam", "team_binary": 64}}, {"model": "badge.team", "pk": 3, "fields": {"team_name": "BlueTeam", "team_binary": 32}}]

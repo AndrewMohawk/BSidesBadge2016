@@ -159,12 +159,8 @@ class badgeGetHash(TemplateView):
 				print "[+] Badge %s Found!" % (badgeID)
 		except Badge.DoesNotExist:
 			if settings.DEBUG:
-				print "[!] Could not find badge %s -- creating" % (badgeID)
-			thisBadge = Badge();
-			badgeTeam = randint(1,3);
-			if settings.DEBUG:
-				print "[!] Random team picked as %s / 3 " % badgeTeam
-			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = None,badge_salt = "Andrew",badge_team_id = badgeTeam)
+				print "[!] Could not find badge %s -- not giving hash!" % (badgeID)
+			return HttpResponse("noyouarenotarealbadge")
 		
 		return HttpResponse(thisBadge.badge_salt)
 
@@ -231,7 +227,7 @@ class badgeCheckin(TemplateView):
 			loser.badge_team = winner.badge_team
 			if settings.DEBUG:
 				print "Both (%s) and (%s) the same, %s converts %s!" % (b1.badge_id,b2.badge_id,winner.badge_id,loser.badge_id);
-			winner.save()
+			loser.save()
 				
 		print "\n\nB1(%s)*%s*[%s] vs B2(%s)*%s*[%s]" % (b1.badge_id,b1.badge_team,b1.badge_level,b2.badge_id,b2.badge_team,b2.badge_level)
 
@@ -289,20 +285,20 @@ class badgeCheckin(TemplateView):
 			if settings.DEBUG:
 				print "[!] Could not find badge %s -- creating" % (badgeID)
 			
-			blueBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='blueTeam'))
-			greenBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='greenTeam'))
-			redBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='redTeam'))
+			blueBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='blue'))
+			greenBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='green'))
+			redBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='red'))
 			
 			badgeList = [blueBadges,greenBadges,redBadges]
 			mostMembers = max(badgeList, key=len)
-			selectList = [Team.objects.get(team_name='greenTeam'),Team.objects.get(team_name='redTeam'),Team.objects.get(team_name='blueTeam')]
+			selectList = [Team.objects.get(team_name='green'),Team.objects.get(team_name='red'),Team.objects.get(team_name='blue')]
 			if(len(mostMembers) > 1):
-				if (mostMembers[0].badge_team.team_name == "blueTeam"):
-					selectList = [Team.objects.get(team_name='greenTeam'),Team.objects.get(team_name='redTeam')]
-				if (mostMembers[0].badge_team.team_name == "greenTeam"):
-					selectList = [Team.objects.get(team_name='blueTeam'),Team.objects.get(team_name='redTeam')]
+				if (mostMembers[0].badge_team.team_name == "blue"):
+					selectList = [Team.objects.get(team_name='green'),Team.objects.get(team_name='red')]
+				if (mostMembers[0].badge_team.team_name == "green"):
+					selectList = [Team.objects.get(team_name='blue'),Team.objects.get(team_name='red')]
 				else:
-					selectList = [Team.objects.get(team_name='greenTeam'),Team.objects.get(team_name='blueTeam')]
+					selectList = [Team.objects.get(team_name='green'),Team.objects.get(team_name='blue')]
 				
 			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = None,badge_salt = "Andrew",badge_team = random.choice(selectList))
 			thisBadge.save()
@@ -320,7 +316,13 @@ class badgeCheckin(TemplateView):
 		jsonResponse = {}
 		jsonResponse["shift"] = shiftVal
 		jsonResponse["status"] = thisBadge.badge_status
-
+		jsonResponse["level"] = thisBadge.badge_level
+		jsonResponse["team"] = thisBadge.badge_team.team_name
+		if(thisBadge.badge_nick == None):
+			jsonResponse["alias"] = "-_-"
+		else:
+			jsonResponse["alias"] = thisBadge.badge_nick
+		
 		
 		if(thisBadge.badge_challenges == None):
 			jsonResponse["challenges"] = list([])
@@ -328,6 +330,7 @@ class badgeCheckin(TemplateView):
 			jsonResponse["challenges"] = list(thisBadge.badge_challenges.all())
 		
 		unencrypted = json.dumps(jsonResponse)
+		#print unencrypted
 		crypted = self.cryptMessage(unencrypted,thisBadge.badge_salt)
 		context["jsonResponse"] = crypted
 		

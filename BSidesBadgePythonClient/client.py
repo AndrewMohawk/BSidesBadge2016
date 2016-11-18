@@ -36,9 +36,11 @@ class BSidesBadge(object):
         print "Page response for badge: %s\n%s" %(self.badge_name,data)
         '''
         postData = {'seen' :  json.dumps(self.badges_seen)}
+        print postData
         #print self.badges_seen
         r = requests.post(url, data=postData, allow_redirects=True)
         data = r.content
+        
         return data
         
     def decryptPage(self,page):

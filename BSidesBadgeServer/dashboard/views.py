@@ -23,9 +23,9 @@ class badgeDashboardAjax(TemplateView):
 			
 			returnObj = {}
 			if(Type == "statusUpdate"):
-				blueBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='blueTeam'))
-				greenBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='greenTeam'))
-				redBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='redTeam'))
+				blueBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='blue'))
+				greenBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='green'))
+				redBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='red'))
 				
 				currentRed = len(redBadges)
 				currentGreen = len(greenBadges)
