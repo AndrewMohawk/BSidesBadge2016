@@ -42,3 +42,6 @@ class Log(models.Model):
 	log_badgeTwo = models.ForeignKey(Badge,db_index=True,null = True,related_name="badgeTwo")
 	log_type = models.CharField("Log Type", unique = False, max_length=200)
 	log_description = models.CharField("Description",unique = False, max_length = 500)
+	def __unicode__(self):
+		return u'Log [ %s ___ %s]' % ( self.log_timestamp, self.log_description )
+		#return u'Log [ %s %s -- (%s && %s) : %s]' % (self.log_timestamp,self.log_type,self.log_badgeOne,self.log_badgeTwo,self.log_description)

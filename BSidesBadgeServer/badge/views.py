@@ -158,12 +158,13 @@ class badgeGetHash(TemplateView):
 		try:
 			thisBadge = Badge.objects.get(badge_id = badgeID)
 			thisBadge.badge_lastseen = datetime.now()
+			thisBadge.save()
 			
 			if settings.DEBUG:
 				print "[+] Badge %s Found!" % (badgeID)
 			
-			logDescrip = "%s %s checked in." % (datetime.now(),thisBadge.badge_nick);
-			logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="Checkin",log_description = logDescrip)
+			logDescrip = "%s ( %s ) fetched hash." % (thisBadge.badge_id, thisBadge.badge_nick);
+			logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="FetchHash",log_description = logDescrip)
 			logEntry.save()
 		except Badge.DoesNotExist:
 			if settings.DEBUG:
@@ -180,7 +181,8 @@ class badgeCheckin(TemplateView):
 		#not the same -- this shouldnt happen but whatever
 		if(b1 == b2):
 			return False
-		
+		logDescrip = "%s ( %s ) checked in via POST and has seen these badges: %s." % (thisBadge.badge_id, thisBadge.badge_nick, ', '.join(seenBadges));
+		logType = "Fight"
 		
 		
 		diff = 1
@@ -197,6 +199,8 @@ class badgeCheckin(TemplateView):
 					b1.badge_level = b1.badge_level - 1
 				if settings.DEBUG:
 					print "Both (%s) and (%s) the same,Defecting player A(%s) from %s to %s!" % (b1.badge_id,b2.badge_id,b1.badge_id,currentTeam,newTeam);
+				logDescrip = "%s (%s) and %s (%s) are on the same team. defecting player A(%s) from %s to %s!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,b1.badge_id,currentTeam,newTeam);
+				logType = "Fight/Defect";
 				b1.save()
 				
 			elif(random.randint(0,15) == 1):
@@ -204,6 +208,8 @@ class badgeCheckin(TemplateView):
 				winner.badge_level = winner.badge_level + diff
 				if settings.DEBUG:
 					print "Both (%s) and (%s) the same, improving %s!" % (b1.badge_id,b2.badge_id,winner.badge_id);
+				logDescrip = "%s (%s) and %s (%s) are on the same team. improving %s!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,winner.badge_id,winner.badge_level);
+				logType = "Fight/Improve";
 				if(winner.badge_level > 5):
 					winner.badge_level = 5;
 					if settings.DEBUG:
@@ -216,7 +222,12 @@ class badgeCheckin(TemplateView):
 		
 		elif(b1.badge_level > b2.badge_level):
 			if settings.DEBUG:
-				print "(%s) has a higher level than (%s) -- (%s) Wins!" % (b1.badge_id,b2.badge_id,b1.badge_id)	
+				print "(%s) has a higher level than (%s) -- (%s) Wins!" % (b1.badge_id,b2.badge_id,b1.badge_id)
+			
+			logDescrip = "%s (%s) has a higher level than %s (%s) -- %s (%s) wins!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,b1.badge_id,b1.badge_nick);
+			logType = "Fight/Convert";
+			
+			
 			b2.badge_team = b1.badge_team
 			b1.badge_level = b1.badge_level - diff
 			b1.normaliseLevel()
@@ -225,7 +236,10 @@ class badgeCheckin(TemplateView):
 			
 		elif(b1.badge_level < b2.badge_level):
 			if settings.DEBUG:
-				print "(%s) has a higher level than (%s) -- (%s) Wins!" % (b2.badge_id,b1.badge_id,b2.badge_id)	
+				print "(%s) has a higher level than (%s) -- (%s) Wins!" % (b2.badge_id,b1.badge_id,b2.badge_id)
+			
+			logDescrip = "%s (%s) has a higher level than %s (%s) -- %s (%s) wins!" % (b2.badge_id,b2.badge_nick,b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick);
+			logType = "Fight/Convert";
 			b1.badge_team = b2.badge_team
 			b2.badge_level = b2.badge_level - diff
 			b2.normaliseLevel()
@@ -240,9 +254,16 @@ class badgeCheckin(TemplateView):
 			loser.badge_team = winner.badge_team
 			if settings.DEBUG:
 				print "Both (%s) and (%s) the same, %s converts %s!" % (b1.badge_id,b2.badge_id,winner.badge_id,loser.badge_id);
+				
+			logDescrip = "%s (%s) and %s (%s) are the same -- %s (%s) converts %s (%s) wins!" % (b2.badge_id,b2.badge_nick,b1.badge_id,b1.badge_nick,winner.badge_id,winner.badge_nick,loser.badge_id,loser.badge_nick);
+			logType = "Fight/Convert";
+			
 			loser.save()
 				
 		print "\n\nB1(%s)*%s*[%s] vs B2(%s)*%s*[%s]" % (b1.badge_id,b1.badge_team,b1.badge_level,b2.badge_id,b2.badge_team,b2.badge_level)
+		
+		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = b1,log_bageTwo=b2,log_type="Fight",log_description = logDescrip)
+		logEntry.save()
 
 	template_name = "checkin.enc"
 	def post(self, request, *args, **kwargs):
@@ -250,6 +271,12 @@ class badgeCheckin(TemplateView):
 		#context = {}
 		
 		seenBadges = json.loads(self.request.POST.get("seen"))
+		
+		thisBadge = context["currentBadge"]
+		logDescrip = "%s ( %s ) checked in via POST and has seen these badges: %s." % (thisBadge.badge_id, thisBadge.badge_nick, ', '.join(seenBadges));
+		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="Checkin",log_description = logDescrip)
+		logEntry.save()
+		
 		print self.request.POST.get("seen") + "!!!"
 		for badgeName in seenBadges:
 			try:
@@ -271,6 +298,10 @@ class badgeCheckin(TemplateView):
 		#context["jsonResponse"] = "asd"
 		
 		#return super(RunnerProcess, self).render_to_response(context)
+		thisBadge = context["currentBadge"]
+		logDescrip = "%s ( %s ) checked in via GET." % (thisBadge.badge_id, thisBadge.badge_nick);
+		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="Checkin",log_description = logDescrip)
+		logEntry.save()
 		return HttpResponse(context["jsonResponse"])
 
 
