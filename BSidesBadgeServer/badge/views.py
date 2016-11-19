@@ -17,6 +17,8 @@ from badge.models import Badge, Challenges
 import base64
 from Crypto.Cipher import AES
 from Crypto import Random
+from django.utils.crypto import get_random_string
+from datetime import datetime
 
 BS = 16
 pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS) 
@@ -155,8 +157,14 @@ class badgeGetHash(TemplateView):
 		#return super(RunnerProcess, self).render_to_response(context)
 		try:
 			thisBadge = Badge.objects.get(badge_id = badgeID)
+			thisBadge.badge_lastseen = datetime.now()
+			
 			if settings.DEBUG:
 				print "[+] Badge %s Found!" % (badgeID)
+			
+			logDescrip = "%s %s checked in." % (datetime.now(),thisBadge.badge_nick);
+			logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="Checkin",log_description = logDescrip)
+			logEntry.save()
 		except Badge.DoesNotExist:
 			if settings.DEBUG:
 				print "[!] Could not find badge %s -- not giving hash!" % (badgeID)
@@ -196,7 +204,12 @@ class badgeCheckin(TemplateView):
 				winner.badge_level = winner.badge_level + diff
 				if settings.DEBUG:
 					print "Both (%s) and (%s) the same, improving %s!" % (b1.badge_id,b2.badge_id,winner.badge_id);
-				winner.save()
+				if(winner.badge_level > 5):
+					winner.badge_level = 5;
+					if settings.DEBUG:
+						print "Oops! %s already at maximum level!" % (b1.badge_id,b2.badge_id,winner.badge_id);
+				else:
+					winner.save()
 			else:
 				if settings.DEBUG:
 					print "Both (%s) and (%s) the same, no one defected or improved!" % (b1.badge_id,b2.badge_id)
@@ -299,12 +312,10 @@ class badgeCheckin(TemplateView):
 					selectList = [Team.objects.get(team_name='blue'),Team.objects.get(team_name='red')]
 				else:
 					selectList = [Team.objects.get(team_name='green'),Team.objects.get(team_name='blue')]
-				
-			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = None,badge_salt = "Andrew",badge_team = random.choice(selectList))
+			randomCode = get_random_string(length=6)
+			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = badgeID,badge_salt = "Andrew",badge_team = random.choice(selectList),badge_verify = randomCode)
 			thisBadge.save()
-			#thisBadge = Badge.create(badgeID)
-			#thisBadge = Badge().createBadge(badgeID)
-			#thisBadge = Badge.createBadge(badgeID);
+
 		
 		print thisBadge
 		
@@ -314,10 +325,13 @@ class badgeCheckin(TemplateView):
 		shiftVal = teamInt + lvl
 		#{"shift":254,"status":"noob","challenges":[1,3,5,7,2]}
 		jsonResponse = {}
+		
 		jsonResponse["shift"] = shiftVal
 		jsonResponse["status"] = thisBadge.badge_status
 		jsonResponse["level"] = thisBadge.badge_level
 		jsonResponse["team"] = thisBadge.badge_team.team_name
+		jsonResponse["verify"] = thisBadge.badge_verify
+		
 		if(thisBadge.badge_nick == None):
 			jsonResponse["alias"] = "-_-"
 		else:
