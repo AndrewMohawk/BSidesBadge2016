@@ -19,15 +19,17 @@ SSD1306  display(0x3c, 5, 2);
 OLEDDisplayUi ui     ( &display );
 
 /* Button Constants */
-const int P1_Left = 1;
-const int P1_Right = 3;
-const int P1_Top = 2;
-const int P1_Bottom = 4;
+const int P1_Left = 0;
+const int P1_Right = 2;
+const int P1_Top = 1;
+const int P1_Bottom = 3;
 
 const int P2_Left = 6;
 const int P2_Right = 4;
 const int P2_Top = 7;
 const int P2_Bottom = 5;
+
+bool lowPowerMode = false;
 
 /* Timer */
 #include "Timer.h"
@@ -80,12 +82,6 @@ uint8_t MAC_array[6];
 char MAC_char[18];
 
 // Badge connect details
-<<<<<<< HEAD
-=======
-//String hashEndPoint = "http://badges2016.andrewmohawk.com/hash.html";
-//String hashEndPoint = "http://10.85.0.200:8000/gethash/";
-//String checkInEndPoint = "http://10.85.0.200:8000/checkin/";
->>>>>>> parent of 44d2cc9... Added terrible 'pwm', debouncing, checkin, server game, button code, darkness
 String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/";
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
 //String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
@@ -95,31 +91,35 @@ String badgeName = "";
 unsigned int badgeNumber;
 
 
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 200;    // the debounce time; increase if the output flickers
+
+unsigned long lastPWMTime = 0;  
+unsigned long PWMDelay = 10;   
+byte currentShiftOut = 0;
+
 
 String team = "RED";
-String alias = "UNKNOWN";
+String alias = "";
+String badgeVerifyCode = "";
 int level = 1;
 
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-<<<<<<< HEAD
   display->drawString(0, 0, String(level));
   
   display->drawXbm(12, 0, fullheart_width, fullheart_height, fullheart_bits);
   
   
-=======
-  display->drawString(0, 0, "LVL:" + String(level) + "/5");
->>>>>>> parent of 44d2cc9... Added terrible 'pwm', debouncing, checkin, server game, button code, darkness
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
   display->drawString(55, 0, alias);
 
 
-  display->drawXbm(90, 0, space_width, space_height, space_bits);
+  display->drawXbm(85, 0, space_width, space_height, space_bits);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, team);
@@ -148,7 +148,6 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->setFont(ArialMT_Plain_10);
   display->drawString(x+32,y+36,badgeName);
 
-<<<<<<< HEAD
   display->setFont(ArialMT_Plain_10);
   display->drawString(x+32,y+46,"Code:" + badgeVerifyCode);
   
@@ -159,14 +158,6 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
  //display->drawString(x+60,y+15,"Local IP:" + WiFi.localIP().toString());
  //display->drawString(x+60,y+25,"BadgeNumber:" + badgeName);
  //display->drawString(x+60,y+35,"Verify Code:" + badgeVerifyCode);
-=======
-
- display->drawXbm(x+35, y+20, WiFi_Logo_width, WiFi_Logo_height-20, WiFi_Logo_bits);
- display->setTextAlignment(TEXT_ALIGN_CENTER);
- display->setFont(ArialMT_Plain_10);
- display->drawString(x+60,y+40,WiFi.localIP().toString());
- display->drawString(x+60,y+50,badgeName);
->>>>>>> parent of 44d2cc9... Added terrible 'pwm', debouncing, checkin, server game, button code, darkness
 
 }
 
@@ -510,10 +501,18 @@ void registerWrite(int whichPin, int whichState) {
 
 void darkness()
 {
-  for(int i=0;i<=8;i++)
-    {
-      registerWrite(i,0);
-    }
+  byte shift = 0;
+  //Serial.println(shift,BIN);
+  setOutShift(shift);
+}
+
+
+void setOutShift(byte shift)
+{
+  digitalWrite(latchPin, LOW); 
+  shiftOut(dataPin, clockPin,MSBFIRST,  shift); 
+  digitalWrite(latchPin, HIGH);
+
 }
 
 void twirl(int numTimes = 1)
@@ -641,74 +640,96 @@ initWiFi(true); // Initialise WiFi
 
 void readShift()
 {
+
+
   int inputPin = 1;
   int buttonPressedVal = 1; //Depending on how buttons are wired
-  
   digitalWrite(pinStcp, LOW);
   delayMicroseconds(20);
   digitalWrite(pinStcp, HIGH);
-
-
-  inputPin = digitalRead(pinDataIn);
-  //Serial.print(inputPin,BIN);
-
-  if(inputPin == buttonPressedVal)
+  byte buttonVals = 0;
+  
+  
+  for (int i=0; i<8; i++)
   {
-    ui.previousFrame();
+    digitalWrite(pinShcp,LOW);
+    delayMicroseconds(20);
+    inputPin = digitalRead(pinDataIn);
+    if(inputPin == buttonPressedVal)
+     {
+      //Serial.println("[.] Button " + String(i) + " pressed!");
+      buttonVals = buttonVals | (1 << i);
+     }
+    
+    digitalWrite(pinShcp,HIGH);
+  }
 
+   
+  if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
+  {
+    lowPowerMode = true;
+    display.displayOff();
+    darkness();
+    
+  }
+  else if(buttonVals & (1 << P1_Right))
+  {
+    display.displayOn();
+    ui.nextFrame();
+    lowPowerMode = false;
+    
+  }
+  else if(buttonVals & (1 << P1_Left))
+  {
+    display.displayOn();
+    ui.previousFrame();
+    lowPowerMode = false;
+  }
+  else if(buttonVals & (1 << P1_Top))
+  {
+    lowPowerMode = false;
+    display.displayOn();
+  }
+  else if(buttonVals & (1 << P1_Bottom))
+  {
+    lowPowerMode = false;
+    display.displayOn();
+  }
+  else if(buttonVals & (1 << P2_Top))
+  {
+    lowPowerMode = false;
+    display.displayOn();
+  }
+  else if(buttonVals & (1 << P2_Left))
+  {
+    lowPowerMode = false;
+    display.displayOn();
+  }
+  else if(buttonVals & (1 << P2_Bottom))
+  {
+    lowPowerMode = false;
+    display.displayOn();
+  }
+  else if(buttonVals & (1 << P2_Right))
+  {
+    darkness();
+    display.displayOn();
+    lowPowerMode = false;
   }
 
 
-   for(int i=0; i < 7; i++) {
+  
+  
+  
 
-     digitalWrite(pinShcp, HIGH);
-     //delayMicroseconds(0.2);
-     //delay(10);
-     inputPin = digitalRead(pinDataIn);
-     //Serial.print(inputPin,BIN);
-     if(inputPin == buttonPressedVal && i == P1_Right)
-     {
-      //Serial.print("ui??");
-      ui.nextFrame();
-     }
-     else if(inputPin == buttonPressedVal && i == P1_Right)
-     {
-      //Serial.print("ui??");
-      ui.previousFrame();
-     }
-     else if (inputPin == buttonPressedVal && i == P1_Top)
-     {
-      level = level + 1;
-      team = "green";
-     }
-     else if (inputPin == buttonPressedVal && i == P1_Bottom)
-     {
-      for(int i=0;i<8;i++)
-      {
-        darkness();
-        registerWrite(i, HIGH);
-        delay(100);
-      }
-    
-     }
 
-     digitalWrite(pinShcp, LOW);
-     //delay(10);
-   }
-   //Serial.println("!");
 }
 
-int StrToHex(char str[])
-{
-  return (int) strtol(str, 0, 16);
-}
+
 
 void transmitBadge()
 {
-  //String txBadge = badgeName;
- 
-  //int number = (int)strtol(badgetmp, NULL, 16);
-  //byte txThing;
+  
   
   Serial.print("[+] IR TX: ");
   
@@ -738,7 +759,7 @@ void dump(decode_results *results) {
       Serial.print("[*] Decoded Badge: ");Serial.println(newBadge,HEX);
       if(newBadge == badgeNumber)
       {
-        Serial.print("[*] This is me! LOL!");
+        Serial.println("[*] This is me! LOL!");
         return;
       }
       
@@ -795,26 +816,32 @@ void fetchStatus()
         Serial.println("[!] parseObject() failed");
         return;
     }
+    darkness();
     
-    byte shift = root["shift"];
-    String statusmsg          = root["statusmsg"];
+    //String statusmsg          = root["statusmsg"];
     level = root["level"];
-    String strtmp = root["team"];
-    team = strtmp;
-    String strtmp2 = root["alias"];
-    alias = strtmp2;
+    team = root["team"].asString();
+    alias = root["alias"].asString();
+    badgeVerifyCode = root["verify"].asString();
+    
+    
     JsonArray& challengesWon    = root["challenges"];
     
-    darkness();
-    twirl();
-    Serial.println(shift,BIN);
-    //writeShift(shift);
-    digitalWrite(latchPin, LOW); 
-    byte curb = shift;
-    //Serial.println(curb,BIN);
-    shiftOut(dataPin, clockPin,MSBFIRST,  curb); 
-    digitalWrite(latchPin, HIGH);
-
+    
+    //twirl();
+    if(lowPowerMode == false)
+    {
+      byte shift = root["shift"];
+      Serial.println(shift,BIN);
+      digitalWrite(latchPin, LOW); 
+      currentShiftOut = shift;
+      shiftOut(dataPin, clockPin,MSBFIRST,  shift); 
+      digitalWrite(latchPin, HIGH);
+    }
+    else
+    {
+      Serial.println("Not updating.");
+    }
     
     //Serial.println(statusmsg);
 
@@ -871,7 +898,27 @@ void loop() {
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
-    readShift();
+    if ((millis() - lastDebounceTime) > debounceDelay) {
+      readShift();
+      lastDebounceTime = millis();
+    }
+
+    /*
+      
+     if ((millis() - lastPWMTime) > PWMDelay) 
+    {
+      if(lowPowerMode == false)
+      {
+        setOutShift(currentShiftOut);
+      }
+      lastPWMTime = millis();
+    }
+    else
+    {
+      darkness();
+    }
+    */
+    
     // put your main code here, to run repeatedly:
     t.update();
     //delay(remainingTimeBudget);
