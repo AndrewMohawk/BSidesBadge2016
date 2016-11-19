@@ -82,10 +82,10 @@ uint8_t MAC_array[6];
 char MAC_char[18];
 
 // Badge connect details
-//String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/";
-//String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
-String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
-String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
+String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/";
+String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
+//String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
+//String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
 
 String badgeName = "";
 unsigned int badgeNumber;
@@ -105,37 +105,59 @@ String badgeVerifyCode = "";
 int level = 1;
 
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
+  
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(0, 0, String(level) + "/5");
+  display->drawString(0, 0, String(level));
+  
+  display->drawXbm(12, 0, fullheart_width, fullheart_height, fullheart_bits);
+  
+  
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(64, 0, alias);
+  display->drawString(55, 0, alias);
 
+
+  display->drawXbm(90, 0, space_width, space_height, space_bits);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, team);
-}
-
-void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // draw an xbm image.
-  // Please note that everything that should be transitioned
-  // needs to be drawn relative to x and y
-  display->drawXbm(x+1,y+1, tm_width, tm_height, tm_bits);
+  
 }
 
 void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // draw an xbm image.
+  // Please note that everything that should be transitioned
+  // needs to be drawn relative to x and y
+  display->drawXbm(x,y+16, tblmnt_width, tblmnt_height, tblmnt_bits);
+}
+
+void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
   // Besides the default fonts there will be a program to convert TrueType fonts into this format
+  display->drawXbm(x,y+16, clown_width, clown_height, clown_bits);
+  
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(x+32,y+16,"Challenges: 0");
+    
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(x+32,y+26,"Badge:");
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(x+32,y+36,badgeName);
 
-
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(x+32,y+46,"Code:" + badgeVerifyCode);
+  
+  
  //display->drawXbm(x+35, y+20, WiFi_Logo_width, WiFi_Logo_height-20, WiFi_Logo_bits);
  //display->setTextAlignment(TEXT_ALIGN_CENTER);
  //display->setFont(ArialMT_Plain_10);
- display->drawString(x+60,y+15,"Local IP:" + WiFi.localIP().toString());
- display->drawString(x+60,y+25,"BadgeNumber:" + badgeName);
- display->drawString(x+60,y+35,"Verify Code:" + badgeVerifyCode);
+ //display->drawString(x+60,y+15,"Local IP:" + WiFi.localIP().toString());
+ //display->drawString(x+60,y+25,"BadgeNumber:" + badgeName);
+ //display->drawString(x+60,y+35,"Verify Code:" + badgeVerifyCode);
 
 }
 
@@ -159,13 +181,34 @@ void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
  display->drawString(x+95,y+45,"Challenge Three");
  display->drawXbm(x+95, y+45, fullheart_width, fullheart_height, fullheart_bits);
 
+
+  //qrcode.create("http://www.andrewmohawk.com/");
 }
+
+void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // Demo for drawStringMaxWidth:
+  // with the third parameter you can define the width after which words will be wrapped.
+  // Currently only spaces and "-" are allowed for wrapping
+  /*display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawStringMaxWidth(0 + x, 16 + y, 128, "9h30 9h45:        Welcome    9h45 10h00: BSides Badge  10-10.30: How To Proxy NFC Comms 10.45-11.15:  Coffee 11.15-11.45:What the DLL?");
+*/
+ display->setTextAlignment(TEXT_ALIGN_CENTER);
+ display->setFont(ArialMT_Plain_10);
+ display->drawString(x+60,y+16,"9h30-9h45");
+ display->drawString(x+60,y+26,"Grant Ongers");
+ display->drawStringMaxWidth(x,y+36,128,"Welcome and Intro");
+ 
+
+  
+}
+
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3 };
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4 };
 
 // how many frames are there?
-int frameCount = 3;
+int frameCount = 4;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
