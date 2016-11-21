@@ -12,24 +12,11 @@
 #include "EEPROMAnything.h"
 
 /* LCD */
-#include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
+#include "SSD1306.h" // Screen Library
 #include "OLEDDisplayUi.h" // Include the UI lib
 #include "images.h" // Include custom images
 SSD1306  display(0x3c, 5, 2);
 OLEDDisplayUi ui     ( &display );
-
-/* Button Constants */
-const int P1_Left = 0;
-const int P1_Right = 2;
-const int P1_Top = 1;
-const int P1_Bottom = 3;
-
-const int P2_Left = 6;
-const int P2_Right = 4;
-const int P2_Top = 7;
-const int P2_Bottom = 5;
-
-bool lowPowerMode = false;
 
 /* Timer */
 #include "Timer.h"
@@ -45,166 +32,125 @@ IRrecv irrecv(RECV_PIN);
 decode_results results;
 
 
+
+/* Button Constants */
+const int P1_Left = 0;
+const int P1_Right = 2;
+const int P1_Top = 1;
+const int P1_Bottom = 3;
+
+const int P2_Left = 6;
+const int P2_Right = 4;
+const int P2_Top = 7;
+const int P2_Bottom = 5;
+
+
+
 /* Shift Out ( 74HC595 ) */
-//Pin connected to latch pin (ST_CP) of 74HC595
-const int latchPin = 12;
-//Pin connected to clock pin (SH_CP) of 74HC595
-const int clockPin = 14;
-//Pin connected to Data in (DS) of 74HC595
-const int dataPin = 13;
+const int latchPin = 12; //Pin connected to latch pin (ST_CP) of 74HC595
+const int clockPin = 14; //Pin connected to clock pin (SH_CP) of 74HC595
+const int dataPin = 13; //Pin connected to Data in (DS) of 74HC595
 
 /* Shift In  */
 const int pinShcp = 15; //Clock
 const int pinStcp = 0; //Latch
 const int pinDataIn = 16; // Data
 
-unsigned int badgeList[10];
+/* List of last 5 seen badges and the amount we have seen since last update */
+unsigned int badgeList[5] = {1234567890,1234567891,1234567892,1234567893,1234567894};
 int numBadges = 0;
 
-MDNSResponder mdns;
-//WiFiServer server(80);
+/* Our HTTP client */
 HTTPClient http;
 
-boolean debug = true;
-
+/* Default WiFi SSID details */
 char defaultSSID[32]     = "EmpireRecords_Devices";
 char defaultPassword[32] = "loldevices";
 //char defaultSSID[32]     = "AndrewMohawkGlobal";
 //char defaultPassword[32] = "0126672737";
 
+/* WiFi struct for EEPROM */
 struct WiFiSettings {
   char ssid[32];
   char password[32];
 } currentWiFi;
 
 
-uint8_t MAC_array[6];
-char MAC_char[18];
-
-// Badge connect details
+/* Endpoints for badges */
 String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/";
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
 //String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
 //String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
 
+/* Badge Name and Number */
 String badgeName = "";
 unsigned int badgeNumber;
 
+/* UI functions for debouncing, last keypressed for 'sleep', lowPowerMode and fake PWM */
 
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 200;    // the debounce time; increase if the output flickers
+unsigned long lastDebounceTime = 0; 
+unsigned long debounceDelay = 200;  
 
-unsigned long lastPWMTime = 0;  
-unsigned long PWMDelay = 10;   
+unsigned long lastAction = 0;
+unsigned long lastActionTimeout = 30000;
+
+bool lowPowerMode = false;
 byte currentShiftOut = 0;
 
+/* Not current used */
+/*
+unsigned long lastPWMTime = 0;  
+unsigned long PWMDelay = 10;   
+*/
 
-String team = "RED";
-String alias = "";
-String badgeVerifyCode = "";
+unsigned long currTime = 0;
+
+
+/* UI Functional variables */
+String team = "None!";
+String alias = "No Alias";
+String badgeVerifyCode = "NoCode";
 int level = 1;
 
-void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
-  
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(0, 0, String(level));
-  
-  display->drawXbm(12, 0, fullheart_width, fullheart_height, fullheart_bits);
-  
-  
-
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(55, 0, alias);
 
 
-  display->drawXbm(85, 0, space_width, space_height, space_bits);
-  display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(128, 0, team);
-  
-}
-
-void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // draw an xbm image.
-  // Please note that everything that should be transitioned
-  // needs to be drawn relative to x and y
-  display->drawXbm(x,y+16, tblmnt_width, tblmnt_height, tblmnt_bits);
-}
-
-void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
-  // Besides the default fonts there will be a program to convert TrueType fonts into this format
-  display->drawXbm(x,y+16, clown_width, clown_height, clown_bits);
-  
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+16,"Challenges: 0");
-    
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+26,"Badge:");
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+36,badgeName);
-
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+46,"Code:" + badgeVerifyCode);
-  
-  
- //display->drawXbm(x+35, y+20, WiFi_Logo_width, WiFi_Logo_height-20, WiFi_Logo_bits);
- //display->setTextAlignment(TEXT_ALIGN_CENTER);
- //display->setFont(ArialMT_Plain_10);
- //display->drawString(x+60,y+15,"Local IP:" + WiFi.localIP().toString());
- //display->drawString(x+60,y+25,"BadgeNumber:" + badgeName);
- //display->drawString(x+60,y+35,"Verify Code:" + badgeVerifyCode);
-
-}
 
 
-void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
-  // Besides the default fonts there will be a program to convert TrueType fonts into this format
+//Speaker information
 
 
- display->drawXbm(x, y+15, skull_width, skull_height, skull_bits);
- display->setTextAlignment(TEXT_ALIGN_RIGHT);
- display->setFont(ArialMT_Plain_10);
- display->drawString(x+85,y+15,"Challenge One");
- display->drawXbm(x+95, y+15, emptyheart_width, emptyheart_height, emptyheart_bits);
+#include <pgmspace.h>
 
- display->drawXbm(x, y+30, skull_width, skull_height, skull_bits);
- display->drawString(x+85,y+30,"Challenge Two");
- display->drawXbm(x+95, y+30, halfheart_width, halfheart_height, halfheart_bits);
+PROGMEM const char string_intro[]  = "          BSIDES Schedule      Use right pad to navigate.";  
+PROGMEM const char string_0[]      = "          08h00-09h15:         Coffee and Registration";   
+PROGMEM const char string_1[]      = "          09h15-09h30:       Grant Ongers - Welcome to BSides";
+PROGMEM const char string_2[]      = "          09h30-09h45:       Andrew MacPherson & Mike Davis - The BSides Badge";
+PROGMEM const char string_3[]      = "          10h00-10h30:        Neil Roebert Mi->NFC->TM: How to proxy NFC comms using Android";
+PROGMEM const char string_4[]      = "          10h45-11h00:       Coffee Break";
+PROGMEM const char string_5[]      = "          11h15-11h45:       Chris Le Roy: What the DLL?";
+PROGMEM const char string_6[]      = "          12h00-12h45:       Lunch";
+PROGMEM const char string_7[]      = "          13h00-13h30:       Ion Todd: Password Securit for humans";
+PROGMEM const char string_8[]      = "          13h45-15h15:       Robert Len: (In)Outsider Trading - Hacking stocks using public information";
+PROGMEM const char string_9[]      = "          14h30-14h45:       Coffee Break";
+PROGMEM const char string_10[]     = "          15h00-15h30:       Charl van der Walt: Love triangles in cyberspace. A tale about trust in 5 chapters";
+PROGMEM const char string_11[]     = "          15h45-16h00:       Thomas Underhay & Darryn Cull: SensePost XRDP Tool";
+PROGMEM const char string_12[]     = "          16h15-16h30:       BSides CPT 2016 Challenge";
+PROGMEM const char string_13[]     = "          16h45-17h00:       Closing";
+const char * const BSidesSchedule [] PROGMEM = {string_intro,string_0,string_1,string_2,string_3,string_4,string_5,string_6,string_7,string_8,string_9,string_10,string_11,string_12,string_13};
 
- display->drawXbm(x, y+45, skull_width, skull_height, skull_bits);
- display->drawString(x+95,y+45,"Challenge Three");
- display->drawXbm(x+95, y+45, fullheart_width, fullheart_height, fullheart_bits);
+//number of speakers
+int numScheduleItems = 13;
+int currentScheduleItem = 0;
+char currentSpeaker[120] = {0};
 
+/* Helpers */
+#include "ShiftRegisters.h" // input/output registers
+#include "WiFi.h" // WiFi connections
+#include "communication.h" // Communications To/From server
+#include "screen.h" // Screen drawing functions
 
-  //qrcode.create("http://www.andrewmohawk.com/");
-}
-
-void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demo for drawStringMaxWidth:
-  // with the third parameter you can define the width after which words will be wrapped.
-  // Currently only spaces and "-" are allowed for wrapping
-  /*display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawStringMaxWidth(0 + x, 16 + y, 128, "9h30 9h45:        Welcome    9h45 10h00: BSides Badge  10-10.30: How To Proxy NFC Comms 10.45-11.15:  Coffee 11.15-11.45:What the DLL?");
-*/
- display->setTextAlignment(TEXT_ALIGN_CENTER);
- display->setFont(ArialMT_Plain_10);
- display->drawString(x+60,y+16,"9h30-9h45");
- display->drawString(x+60,y+26,"Grant Ongers");
- display->drawStringMaxWidth(x,y+36,128,"Welcome and Intro");
- 
-
-  
-}
 
 // This array keeps function pointers to all frames
-// frames are the single views that slide in
 FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4 };
 
 // how many frames are there?
@@ -214,318 +160,8 @@ int frameCount = 4;
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 
-/*
- * Connects to Wifi Network and tries for <attempts> seconds
- */
-boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
-{
-  WiFi.mode(WIFI_STA) ;
-  Serial.printf("Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode(WIFI_STA) ? "" : "Failed!");
-
-  //delay(1000);
-  Serial.print("[+] Connecting to network:");Serial.print(wSSID);Serial.print("-- password:");Serial.print(wPassword);Serial.println(".");
-  WiFi.begin(wSSID, wPassword);
-  int statNum = 0;
-  
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    Serial.print(".");
-    delay(500);
-    ESP.wdtFeed();
-    if(attempts % 2 == 0)
-    {
-      if(statNum == 5)
-      {
-        statNum = 0;
-      }
-      
-      statNum = statNum + 1;
-      
-      int baseColor = 128;
-      writeShift(baseColor + pow(statNum,2));
-      
-    }
-    attempts = attempts - 1;
-    if(attempts == 0)
-    {
-      Serial.println("FAILED.");
-      Serial.printf("Connection status: %d\n", WiFi.status());
-      WiFi.printDiag(Serial);
-      return false;
-    }
-    
-  }
-  Serial.println("PASSED.");
-  
-  //Dont even ask about this fuckshow. -- seriously, >_<
-  badgeName = WiFi.macAddress();
-  //Serial.println("starting:" + badgeName);
-  badgeName.replace(":","");
-  badgeName = badgeName.substring(4);
-  //Serial.println("using:" + badgeName);
-  char charBuf[50];
-  int str_len = badgeName.length() + 1; 
-  badgeName.toCharArray(charBuf, str_len);
-  //Serial.println("using2:");Serial.println(charBuf);
-  badgeNumber = strtoul(charBuf, NULL, 16);
-  badgeName = String(badgeNumber);
-  //Serial.println("ended with:" + badgeName);
-  
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-  Serial.print("Badge Number: ");
-  Serial.println(badgeName);
-  
-  return true;
-}
-
-/*
- * Initialise Wifi
- * ---------------
- * This first tries the default creds for 30s, then looks to see 
- * if anything is stored in the EEPROM and then asks the user for SSID/PW
- */
-
-void initWiFi(boolean boot = false)
-{
-  
-  // Try connect to the default WiFi SSID and Password
-  boolean defaultConnect;
-  
-  defaultConnect = wifiConnect(defaultSSID,defaultPassword,30);
-
-  
-  if(defaultConnect == true)
-  {
-    strcpy(currentWiFi.ssid, defaultSSID);
-    strcpy(currentWiFi.password, defaultPassword);
-  }
-  else
-  {
-    // Default SSID/PW doesnt work, lets try from the EEPROM
-    char* EEPROMSSID;
-    char* EEPROMPassword;   
-    boolean EEPROMConnect = false;
-    
-    EEPROM_readAnything(0, currentWiFi);
-    EEPROMConnect = wifiConnect(currentWiFi.ssid,currentWiFi.password,10);
-    
-
-    if(EEPROMConnect == true)
-    {
-      //Serial.println("Connected1!");
-      //strcpy(currentWiFi.ssid, EEPROMSSID);
-      //strcpy(currentWiFi.password, EEPROMPassword); 
-      //Serial.println("Connected2!");
-    }
-    else
-    {
-      if(boot == true)
-      {
-      Serial.println("Cannot connect to valid WiFi network, please provide one.");
-      
-      char SerialSSID[32] = "";
-      char SerialPassword[32] = "";
-      String str;
-
-      Serial.println("Please enter SSID:");
-      while(Serial.available() == 0) {}
-      if(Serial.available() > 0)
-      {
-          str = Serial.readStringUntil('\n');
-      }
-      
-      str.toCharArray(SerialSSID,str.length());
-      
-
-      str = "";
-      Serial.println("Please enter Password:");
-      while(Serial.available() == 0) {}
-      if(Serial.available() > 0)
-      {
-          str = Serial.readStringUntil('\n');
-      }
-      str.toCharArray(SerialPassword,str.length());
-      
-      
-      boolean SerialConnect;
-      SerialConnect = wifiConnect(SerialSSID,SerialPassword,10);
-
-      if(SerialConnect == true)
-      {
-        strcpy(currentWiFi.ssid, SerialSSID);
-        strcpy(currentWiFi.password, SerialPassword);
-        
-        EEPROM_writeAnything(0,currentWiFi);
-        
-        Serial.println("Written to EEPROM!");
-      }
-      else
-      {
-        Serial.println("Failed. Please reset to try again. ");
-        delay(5000);
-      }
-      
-      }
-      else
-      {
-        initWiFi();
-      }
-    }
-
-    
-  }
-}
-
-String makeHTTPRequest(String URL)
-{
-  String decoded = "";
-  URL = URL + "" + badgeName + "/";
-  if (WiFi.status() == WL_CONNECTED) 
-  {
-      // Lets get the hash
-      http.begin(hashEndPoint + "" + badgeName + "/");
-      
-      int httpCode = http.GET();
-      if(httpCode > 0) 
-      {
-          // file found at server
-          if(httpCode == HTTP_CODE_OK) 
-          {
-              String hashkey = http.getString();
-              Serial.println("[+] Got Key for decoding:" + hashkey);
-              http.end();
 
 
-              http.begin(URL); 
-              http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-              String postString = "seen=[";
-              for (int i = 0; i < numBadges; i++)
-              {
-                //Serial.println("POST Badge:" + badgeList[i]);
-                postString += '"';
-                postString = postString + (String)badgeList[i];
-                postString += '"';
-                if(i < numBadges -1)
-                {
-                  postString += ",";
-                }
-              }
-              postString += "]";
-              int httpCode = http.POST(postString);      
-              // start connection and send HTTP header
-              //int httpCode = http.GET();
-              if(httpCode > 0) 
-              {
-                  if(httpCode == HTTP_CODE_OK) 
-                  {
-                      String payload = http.getString();
-                      Serial.println("[+] Got Payload:" + payload);
-                      decoded = decodeShift(payload,hashkey);
-                      Serial.println("[+] Decrypted: " + decoded);
-
-                      numBadges = 0;
-                  }
-              } 
-              else 
-              {
-                  //Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-              }
-              http.end();
-              
-          }
-      }
-      else
-      {
-        Serial.println("[!] Got no response.");
-      }
-      
-      
-  }
-  else
-  {
-    initWiFi();
-  }
-
-  return decoded;
-}
-
-/*
- * Draw a progress bar on the screen
- */
-
-void drawProgressBar(int from, int to, String statusMessage, int progdelay = 5 ) {
-  display.clear();
-  display.setFont(ArialMT_Plain_10);
-  for (int countUp = from;countUp <= to;countUp++)
-  {
-    display.clear();
-    int progress = (countUp);
-    // draw the progress bar
-    display.drawProgressBar(0, 32, 120, 10, progress);
-  
-    // draw the percentage as String
-    display.setTextAlignment(TEXT_ALIGN_CENTER);
-    display.drawString(64, 15, statusMessage + " " + String(progress) + "%");
-    display.display();
-    delay(progdelay);
-  }
-}
-
-void writeShift(byte curb)
-{
-  digitalWrite(latchPin, LOW); 
-  shiftOut(dataPin, clockPin,MSBFIRST,  curb); 
-  digitalWrite(latchPin, HIGH);
-}
-
-void registerWrite(int whichPin, int whichState) {
-// the bits you want to send
-  byte bitsToSend = 0;
-  //Serial.println("Setting " + String(whichPin) + " to High");
-  // turn off the output so the pins don't light up
-  // while you're shifting bits:
-  digitalWrite(latchPin, LOW);
-
-  // turn on the next highest bit in bitsToSend:
-  bitWrite(bitsToSend, whichPin, whichState);
-
-  // shift the bits out:
-  shiftOut(dataPin, clockPin, MSBFIRST, bitsToSend);
-
-    // turn on the output so the LEDs can light up:
-  digitalWrite(latchPin, HIGH);
-  //delay(100);
-
-}
-
-void darkness()
-{
-  byte shift = 0;
-  //Serial.println(shift,BIN);
-  setOutShift(shift);
-}
-
-
-void setOutShift(byte shift)
-{
-  digitalWrite(latchPin, LOW); 
-  shiftOut(dataPin, clockPin,MSBFIRST,  shift); 
-  digitalWrite(latchPin, HIGH);
-
-}
-
-void twirl(int numTimes = 1)
-{
-  for(int x=0;x<numTimes;x++)
-  {
-    for(int i=0;i<=8;i++)
-    {
-      registerWrite(i,1);
-      delay(100);
-    }
-  }
-}
 
 
 /*
@@ -533,6 +169,9 @@ void twirl(int numTimes = 1)
  */
 void setup() {
   Serial.begin(74880);
+  
+  strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
+  
 /* shift out */
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);  
@@ -635,274 +274,60 @@ initWiFi(true); // Initialise WiFi
   ui.init();
   display.flipScreenVertically();
 
-}
-
-
-void readShift()
-{
-
-
-  int inputPin = 1;
-  int buttonPressedVal = 1; //Depending on how buttons are wired
-  digitalWrite(pinStcp, LOW);
-  delayMicroseconds(20);
-  digitalWrite(pinStcp, HIGH);
-  byte buttonVals = 0;
-  
-  
-  for (int i=0; i<8; i++)
-  {
-    digitalWrite(pinShcp,LOW);
-    delayMicroseconds(20);
-    inputPin = digitalRead(pinDataIn);
-    if(inputPin == buttonPressedVal)
-     {
-      //Serial.println("[.] Button " + String(i) + " pressed!");
-      buttonVals = buttonVals | (1 << i);
-     }
-    
-    digitalWrite(pinShcp,HIGH);
-  }
-
-   
-  if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
-  {
-    lowPowerMode = true;
-    display.displayOff();
-    darkness();
-    
-  }
-  else if(buttonVals & (1 << P1_Right))
-  {
-    display.displayOn();
-    ui.nextFrame();
-    lowPowerMode = false;
-    
-  }
-  else if(buttonVals & (1 << P1_Left))
-  {
-    display.displayOn();
-    ui.previousFrame();
-    lowPowerMode = false;
-  }
-  else if(buttonVals & (1 << P1_Top))
-  {
-    lowPowerMode = false;
-    display.displayOn();
-  }
-  else if(buttonVals & (1 << P1_Bottom))
-  {
-    lowPowerMode = false;
-    display.displayOn();
-  }
-  else if(buttonVals & (1 << P2_Top))
-  {
-    lowPowerMode = false;
-    display.displayOn();
-  }
-  else if(buttonVals & (1 << P2_Left))
-  {
-    lowPowerMode = false;
-    display.displayOn();
-  }
-  else if(buttonVals & (1 << P2_Bottom))
-  {
-    lowPowerMode = false;
-    display.displayOn();
-  }
-  else if(buttonVals & (1 << P2_Right))
-  {
-    darkness();
-    display.displayOn();
-    lowPowerMode = false;
-  }
-
-
-  
-  
-  
-
+  lastAction = millis();
 
 }
 
 
 
-void transmitBadge()
-{
-  
-  
-  Serial.print("[+] IR TX: ");
-  
-  Serial.println(badgeNumber,HEX);
-  irsend.sendSony(badgeNumber, 32);
- 
-}
 
 
-void dump(decode_results *results) {
-  int newBadge = results->value;
-  //Serial.println("[+] IR RX");
 
-  Serial.print("[*] IR RX: ");
-  Serial.println(newBadge,HEX);
-
-  int count = results->rawlen;
-  
-  if (results->decode_type == SONY) 
-  {
-    
-    if(results->bits == 32)
-    {
-      int newBadge = results->value;
-     // char charBuf[50];
-      //String(newBadge).toCharArray(charBuf, 50);
-      Serial.print("[*] Decoded Badge: ");Serial.println(newBadge,HEX);
-      if(newBadge == badgeNumber)
-      {
-        Serial.println("[*] This is me! LOL!");
-        return;
-      }
-      
-      bool seenBadge = false;
-      int i = 0;
-      
-      for (i = 0; i < numBadges; i++)
-      {
-        if(badgeList[i] == newBadge)
-        {
-          seenBadge = true;
-        }
-      }
-
-      if(seenBadge == false)
-      {
-        
-        int badgePos = numBadges;  
-        if(badgePos > 6)
-        {
-          badgePos = 0;
-        }
-        badgeList[badgePos] = newBadge;
-        numBadges++;
-        Serial.println("[*] Adding as new Badge.");
-        Serial.print("[*] List count at:");Serial.println(numBadges);
-        
-      }
-      else
-      {
-       Serial.println("[*]  Already seen this badge.");
-      }
-  
-    }
-   
-   
-    
-  }
-
-}
-
-void fetchStatus()
-{
-  
-  String statusResult = makeHTTPRequest(checkInEndPoint);
-  if(statusResult != "")
-  {
-    
-    StaticJsonBuffer<500> jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(statusResult);
-
-    if (!root.success()) 
-    {
-        Serial.println("[!] parseObject() failed");
-        return;
-    }
-    darkness();
-    
-    //String statusmsg          = root["statusmsg"];
-    level = root["level"];
-    team = root["team"].asString();
-    alias = root["alias"].asString();
-    badgeVerifyCode = root["verify"].asString();
-    
-    
-    JsonArray& challengesWon    = root["challenges"];
-    
-    
-    //twirl();
-    if(lowPowerMode == false)
-    {
-      byte shift = root["shift"];
-      Serial.println(shift,BIN);
-      digitalWrite(latchPin, LOW); 
-      currentShiftOut = shift;
-      shiftOut(dataPin, clockPin,MSBFIRST,  shift); 
-      digitalWrite(latchPin, HIGH);
-    }
-    else
-    {
-      Serial.println("Not updating.");
-    }
-    
-    //Serial.println(statusmsg);
-
-    for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
-    {
-        const char* value = *it;
-        Serial.print("[+] Won Challenge:");Serial.println(value);   
-    }
-   
-    
-  }
-  else
-  {
-    Serial.println("[!] Error! invalid status!" );
-  }
-  
-  
-}
-
-
-String decodeShift(String input, String key)
-{
-  //this is our shift
-  int keyLen = key.length();
-  int inputLen = input.length();
-  Serial.println("Decoding...");
-  String output = "";
-  for(int i=0; i<inputLen;i++)
-  {
-    char thisChar = input.charAt(i);
-    //Serial.print("Char:");Serial.print(thisChar);
-    int thisCharInt = (int)thisChar;
-    //Serial.print(" Int:");Serial.print(thisCharInt);
-    
-    int outCharInt = thisCharInt + keyLen;
-    //Serial.print(" OutInt:");Serial.print(outCharInt);
-    output = output + ((char)outCharInt);
-    //Serial.print(" OutChar:");Serial.print((char)outCharInt);Serial.println("!");
-  }
-  return output;
-  //return (String)"This isnt it";
-  
-}
 
 
 
 
 
 void loop() {
-  int remainingTimeBudget = ui.update();
+  int remainingTimeBudget = 0;
+  if(lowPowerMode == false)
+  {
+    remainingTimeBudget = ui.update();
+  }
+  else
+  {
+    t.update();
+  }
 
 
-  if (remainingTimeBudget > 0) {
+  if (remainingTimeBudget > 0 || lowPowerMode == true) {
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-      readShift();
-      lastDebounceTime = millis();
-    }
 
+    currTime = millis();
+    
+    if ((currTime - lastDebounceTime) > debounceDelay) {
+      readShift();
+      lastDebounceTime = currTime;
+    }
+    
+    currTime = millis(); // Dont ask why we need to do this again............ I mean wtf!
+    
+    if(currTime - lastAction > lastActionTimeout)
+    {
+      if(lowPowerMode == false)
+      {
+      display.clear();
+      display.drawXbm(0, 16, sleepingpanda_width, sleepingpanda_height, sleepingpanda_bits);
+      display.display();
+      lowPowerMode = true;
+      setOutShift(0);
+      
+      }
+      
+
+    }
     /*
       
      if ((millis() - lastPWMTime) > PWMDelay) 
@@ -921,12 +346,15 @@ void loop() {
     
     // put your main code here, to run repeatedly:
     t.update();
-    //delay(remainingTimeBudget);
+
+    if (irrecv.decode(&results)) 
+    {
+      dump(&results);
+      irrecv.resume(); // Receive the next value
+    }
+   
   }
   
- if (irrecv.decode(&results)) {
-    dump(&results);
-    irrecv.resume(); // Receive the next value
-  }
+ 
   
 }

@@ -19,6 +19,16 @@ const int P2_Right = 4;
 const int P2_Top = 7;
 const int P2_Bottom = 5;
 
+
+/*Infrared */
+#include <IRremoteESP8266.h>
+const int TX_PIN = 10;
+IRsend irsend(TX_PIN); //an IR led is connected to GPIO pin 0
+
+int RECV_PIN = 4; 
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
 /* LCD */
 #include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
 #include "OLEDDisplayUi.h" // Include the UI lib
@@ -26,14 +36,14 @@ const int P2_Bottom = 5;
 SSD1306  display(0x3c, 5, 2);
 OLEDDisplayUi ui     ( &display );
 
-/* noway */
-#include <qrcode.h>
-QRcode qrcode (&display);
+
 
 /* Timer */
 #include "Timer.h"
 Timer t;                               //instantiate the timer object
 
+unsigned long lastAction = 0;
+unsigned long lastActionTimeout = 30000;
 
 
 
@@ -82,12 +92,44 @@ unsigned long debounceDelay = 200;    // the debounce time; increase if the outp
 unsigned long lastPWMTime = 0;  
 unsigned long PWMDelay = 10;   
 byte currentShiftOut = 0;
-
+unsigned long currTime = 0;
 
 String team = "RED";
 String alias = "AndrewM";
 String badgeVerifyCode = "";
 int level = 1;
+
+
+
+#include <pgmspace.h>
+
+
+//Speaker information
+PROGMEM const char string_intro[]  = "          BSIDES Schedule      Use right pad to navigate.";  
+PROGMEM const char string_0[]      = "          08h00-09h15:         Coffee and Registration";   
+PROGMEM const char string_1[]      = "          09h15-09h30:       Grant Ongers - Welcome to BSides";
+PROGMEM const char string_2[]      = "          09h30-09h45:       Andrew MacPherson & Mike Davis - The BSides Badge";
+PROGMEM const char string_3[]      = "          10h00-10h30:        Neil Roebert Mi->NFC->TM: How to proxy NFC comms using Android";
+PROGMEM const char string_4[]      = "          10h45-11h00:       Coffee Break";
+PROGMEM const char string_5[]      = "          11h15-11h45:       Chris Le Roy: What the DLL?";
+PROGMEM const char string_6[]      = "          12h00-12h45:       Lunch";
+PROGMEM const char string_7[]      = "          13h00-13h30:       Ion Todd: Password Securit for humans";
+PROGMEM const char string_8[]      = "          13h45-15h15:       Robert Len: (In)Outsider Trading - Hacking stocks using public information";
+PROGMEM const char string_9[]      = "          14h30-14h45:       Coffee Break";
+PROGMEM const char string_10[]     = "          15h00-15h30:       Charl van der Walt: Love triangles in cyberspace. A tale about trust in 5 chapters";
+PROGMEM const char string_11[]     = "          15h45-16h00:       Thomas Underhay & Darryn Cull: SensePost XRDP Tool";
+PROGMEM const char string_12[]     = "          16h15-16h30:       BSides CPT 2016 Challenge";
+PROGMEM const char string_13[]     = "          16h45-17h00:       Closing";
+const char * const BSidesSchedule [] PROGMEM = {string_intro,string_0,string_1,string_2,string_3,string_4,string_5,string_6,string_7,string_8,string_9,string_10,string_11,string_12,string_13};
+
+//number of speakers
+int numScheduleItems = 13;
+int currentScheduleItem = 0;
+char currentSpeaker[120] = {0};
+
+
+
+
 
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   
@@ -95,13 +137,13 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setFont(ArialMT_Plain_10);
   display->drawString(0, 0, String(level));
   
-  display->drawXbm(12, 0, fullheart_width, fullheart_height, fullheart_bits);
+  display->drawXbm(8, 0, fullheart_width, fullheart_height, fullheart_bits);
   
   
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(55, 0, alias);
+  display->drawString(45, 0, alias);
 
 
   display->drawXbm(90, 0, space_width, space_height, space_bits);
@@ -115,26 +157,44 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   // draw an xbm image.
   // Please note that everything that should be transitioned
   // needs to be drawn relative to x and y
-  display->drawXbm(x,y+16, tblmnt_width, tblmnt_height, tblmnt_bits);
+  //display->drawXbm(x,y+16, tblmnt_width, tblmnt_height, tblmnt_bits);
+  //strcpy_P(currentSpeaker, (char*)pgm_read_word(&(BSidesSchedule[currentScheduleItem]))); 
+  //currentSpeaker = FPSTR(BSidesSchedule[currentScheduleItem]);
+  //strcpy_P(currentSpeaker, (char*)pgm_read_word(&(BSidesSchedule[1])));
+  //display->drawStringMaxWidth(0 + x, 10 + y, 128,currentSpeaker);
+  //strcpy_P(buffer, (char)pgm_read_word(&(string_table[1]))); 
+  //display->drawStringMaxWidth(0 + x, 10 + y, 128,buffer);
+  //String currentSpeakertest = FPSTR(BSidesSchedule[currentScheduleItem]);
+  //display->drawStringMaxWidth(0 + x, 10 + y, 128,currentSpeakertest);
+  
+ // display->drawStringMaxWidth(0 + x, 10 + y, 128,buff);
+ //strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[5])));
+ //Serial.println(currentSpeaker);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  //display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
+  display->drawStringMaxWidth(0 + x, 13 + y, 128,currentSpeaker);
 }
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
   // Besides the default fonts there will be a program to convert TrueType fonts into this format
-  display->drawXbm(x,y+16, clown_width, clown_height, clown_bits);
+  display->drawXbm(x,y+14, ship_width, ship_height, ship_bits);
   
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+16,"Challenges: 5");
+  display->drawString(x+32,y+13,"Challenges: 0");
     
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+26,"Badge:");
+  display->drawString(x+32,y+23,"Badge:");
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+36,"2483202117");
+  display->drawString(x+32,y+33,badgeName);
 
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+46,"Code: ayZsl1");
+  display->drawString(x+32,y+43,"Code:");
+  display->drawString(x+32,y+53,"aN1oHs");
+  
   
   
  //display->drawXbm(x+35, y+20, WiFi_Logo_width, WiFi_Logo_height-20, WiFi_Logo_bits);
@@ -180,9 +240,10 @@ void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 */
  display->setTextAlignment(TEXT_ALIGN_CENTER);
  display->setFont(ArialMT_Plain_10);
- display->drawString(x+60,y+16,"9h30-9h45");
- display->drawString(x+60,y+26,"Grant Ongers");
- display->drawStringMaxWidth(x,y,128,"Welcome and Introduction to BSides CPT");
+ display->drawString(x+1,y+16,"9h30-9h45");
+ display->drawString(x+1,y+26,"Grant Ongers");
+ display->drawStringMaxWidth(x+30,y+36,128,"Welcome and Intro");
+ 
 
   
 }
@@ -279,14 +340,46 @@ void twirl(int numTimes = 1)
 /*
  * Main Setup for badge.
  */
+ //char buffer[20] = {0};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char PROGMEM Line1[] = {"String 1"};
+static const char PROGMEM Line2[] = {"String 2"};
+static const char PROGMEM Line3[] = {"String 3"};
+
+const char * const Lines [] PROGMEM = { Line1, Line2, Line3 };
+  
 void setup() {
+  //strcpy_P(buffer, (char*) pgm_read_dword(&(Lines[0])));
+  lastAction = millis();
   Serial.begin(74880);
+  //currentSpeaker
+  strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
+  //Serial.println(currentSpeaker);
+  
+    
+  //Serial.print("buffer=");
+  //Serial.println(currentSpeaker);
 /* shift out */
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);  
   pinMode(clockPin, OUTPUT);
   darkness();
-qrcode.init();
+
   
 
 /* shift in */
@@ -347,13 +440,17 @@ pinMode(pinStcp, OUTPUT);
   ui.init();
   display.flipScreenVertically();
 
+  irrecv.enableIRIn(); // Start the receiver
+  irsend.begin();
+  //int tickEvent2 = t.every(5550, transmitBadge);
+
 }
 
 
 void readShift()
 {
 
-
+  int currentFrame = ui.getUiState()->currentFrame;
   int inputPin = 1;
   int buttonPressedVal = 1; //Depending on how buttons are wired
   digitalWrite(pinStcp, LOW);
@@ -369,7 +466,7 @@ void readShift()
     inputPin = digitalRead(pinDataIn);
     if(inputPin == buttonPressedVal)
      {
-      //Serial.println("[.] Button " + String(i) + " pressed!");
+      Serial.println("[.] Button " + String(i) + " pressed!");
       buttonVals = buttonVals | (1 << i);
      }
     
@@ -379,6 +476,7 @@ void readShift()
    
   if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
   {
+    Serial.println("setting low power!!!");
     lowPowerMode = true;
     display.displayOff();
     darkness();
@@ -389,6 +487,7 @@ void readShift()
     display.displayOn();
     ui.nextFrame();
     lowPowerMode = false;
+    lastAction = millis();
     
   }
   else if(buttonVals & (1 << P1_Left))
@@ -396,39 +495,73 @@ void readShift()
     display.displayOn();
     ui.previousFrame();
     lowPowerMode = false;
+    lastAction = millis();
   }
   else if(buttonVals & (1 << P1_Top))
   {
     lowPowerMode = false;
     display.displayOn();
+    lastAction = millis();
   }
   else if(buttonVals & (1 << P1_Bottom))
   {
     lowPowerMode = false;
     display.displayOn();
+    lastAction = millis();
   }
   else if(buttonVals & (1 << P2_Top))
   {
     lowPowerMode = false;
     display.displayOn();
-    level = level + 1;
+    lastAction = millis();
+    Serial.println(ESP.getFreeHeap());
+    
   }
   else if(buttonVals & (1 << P2_Left))
   {
     lowPowerMode = false;
     display.displayOn();
+    lastAction = millis();
+    if (currentFrame == 0)
+    {
+      if(currentScheduleItem < 1)
+      {
+        currentScheduleItem = numScheduleItems;
+      }
+      else
+      {
+        currentScheduleItem--;
+      }
+      strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
+    }
+    Serial.println(ESP.getFreeHeap());
   }
   else if(buttonVals & (1 << P2_Bottom))
   {
     lowPowerMode = false;
     display.displayOn();
-    level = level -1;
+    lastAction = millis();
   }
   else if(buttonVals & (1 << P2_Right))
   {
     darkness();
     display.displayOn();
+    lastAction = millis();
     lowPowerMode = false;
+    if (currentFrame == 0)
+    {
+      if(currentScheduleItem > numScheduleItems)
+      {
+        currentScheduleItem = 0;
+      }
+      else
+      {
+        currentScheduleItem++;
+      }
+      strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
+    }
+    
+    Serial.println(ESP.getFreeHeap());
   }
 
 
@@ -442,19 +575,53 @@ void readShift()
 
 
 void loop() {
-  int remainingTimeBudget = ui.update();
+  int remainingTimeBudget = 0;
+  if(lowPowerMode == false)
+  {
+    
+    remainingTimeBudget = ui.update();
+  }
+  else
+  {
+    //Serial.println("low power?");
+    t.update();
+  }
 
 
-  if (remainingTimeBudget > 0) {
+  if (remainingTimeBudget > 0 || lowPowerMode == true) {
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-      readShift();
-      lastDebounceTime = millis();
-    }
 
-    if ((millis() - lastPWMTime) > PWMDelay) 
+    currTime = millis();
+    
+    if ((currTime - lastDebounceTime) > debounceDelay) {
+      readShift();
+      lastDebounceTime = currTime;
+    }
+    
+    currTime = millis();
+    if(currTime - lastAction > lastActionTimeout)
+    {
+      Serial.println("Oh noes, nothing happened!");
+      Serial.println(currTime - lastAction);
+      Serial.println(currTime);
+      Serial.println(lastAction);
+      if(lowPowerMode == false)
+      {
+      display.clear();
+      display.drawXbm(0, 16, sleepingpanda_width, sleepingpanda_height, sleepingpanda_bits);
+      display.display();
+      lowPowerMode = true;
+      setOutShift(0);
+      
+      }
+      
+
+    }
+    /*
+      
+     if ((millis() - lastPWMTime) > PWMDelay) 
     {
       if(lowPowerMode == false)
       {
@@ -466,10 +633,17 @@ void loop() {
     {
       darkness();
     }
+    */
     
     // put your main code here, to run repeatedly:
     t.update();
-    //delay(remainingTimeBudget);
+
+    if (irrecv.decode(&results)) 
+    {
+      //dump(&results);
+      irrecv.resume(); // Receive the next value
+    }
+   
   }
   
 
