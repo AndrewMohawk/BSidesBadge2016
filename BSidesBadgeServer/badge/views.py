@@ -217,7 +217,7 @@ class badgeCheckin(TemplateView):
 				if(winner.badge_level > 5):
 					winner.badge_level = 5;
 					if settings.DEBUG:
-						print "Oops! %s already at maximum level!" % (b1.badge_id,b2.badge_id,winner.badge_id);
+						print "Oops! %s (%s) already at maximum level!" % (winner.badge_id,winner.badge_nick);
 				else:
 					winner.save()
 			else:
