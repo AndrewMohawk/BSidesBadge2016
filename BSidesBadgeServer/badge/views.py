@@ -181,7 +181,7 @@ class badgeCheckin(TemplateView):
 		#not the same -- this shouldnt happen but whatever
 		if(b1 == b2):
 			return False
-		logDescrip = "%s ( %s ) checked in via POST and has seen these badges: %s." % (thisBadge.badge_id, thisBadge.badge_nick, ', '.join(seenBadges));
+		logDescrip = "";
 		logType = "Fight"
 		
 		
@@ -203,11 +203,15 @@ class badgeCheckin(TemplateView):
 				logType = "Fight/Defect";
 				b1.save()
 				
-			elif(random.randint(0,15) == 1):
+			elif(random.randint(1,2) == 1):
 				winner = random.choice([b1, b2])
 				winner.badge_level = winner.badge_level + diff
 				if settings.DEBUG:
 					print "Both (%s) and (%s) the same, improving %s!" % (b1.badge_id,b2.badge_id,winner.badge_id);
+				if(b1.badge_nick == None):
+					b1.badge_nick = "";
+				if(b2.badge_nick == None):
+					b2.badge_nick = "";
 				logDescrip = "%s (%s) and %s (%s) are on the same team. improving %s!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,winner.badge_id,winner.badge_level);
 				logType = "Fight/Improve";
 				if(winner.badge_level > 5):
@@ -262,7 +266,7 @@ class badgeCheckin(TemplateView):
 				
 		print "\n\nB1(%s)*%s*[%s] vs B2(%s)*%s*[%s]" % (b1.badge_id,b1.badge_team,b1.badge_level,b2.badge_id,b2.badge_team,b2.badge_level)
 		
-		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = b1,log_bageTwo=b2,log_type="Fight",log_description = logDescrip)
+		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = b1,log_badgeTwo=b2,log_type="Fight",log_description = logDescrip)
 		logEntry.save()
 
 	template_name = "checkin.enc"
