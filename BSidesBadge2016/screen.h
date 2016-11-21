@@ -69,7 +69,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   
 }
 
-
+ 
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
  display->drawXbm(x, y+15, skull_width, skull_height, skull_bits);
  display->setTextAlignment(TEXT_ALIGN_RIGHT);

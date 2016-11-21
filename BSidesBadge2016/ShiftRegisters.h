@@ -6,7 +6,7 @@ void registerWrite(int whichPin, int whichState) {
   // turn off the output so the pins don't light up
   // while you're shifting bits:
   digitalWrite(latchPin, LOW);
-
+ 
   // turn on the next highest bit in bitsToSend:
   bitWrite(bitsToSend, whichPin, whichState);
 

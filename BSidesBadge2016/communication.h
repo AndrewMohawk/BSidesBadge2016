@@ -120,7 +120,7 @@ void fetchStatus()
     alias = root["alias"].asString();
     badgeVerifyCode = root["verify"].asString();
     
-    
+     
     JsonArray& challengesWon    = root["challenges"];
     
     

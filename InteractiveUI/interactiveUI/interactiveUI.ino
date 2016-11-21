@@ -194,7 +194,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->setFont(ArialMT_Plain_10);
   display->drawString(x+32,y+43,"Code:");
   display->drawString(x+32,y+53,"aN1oHs");
-  
+   
   
   
  //display->drawXbm(x+35, y+20, WiFi_Logo_width, WiFi_Logo_height-20, WiFi_Logo_bits);

@@ -184,7 +184,7 @@ pinMode(pinStcp, OUTPUT);
  pinMode(pinDataIn, INPUT);
   
   
-  
+   
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);

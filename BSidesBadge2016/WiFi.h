@@ -36,7 +36,7 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
     }
     
   }
-  //Serial.println("PASSED.");
+  //Serial.println("PASSED."); 
   
   //Dont even ask about this fuckshow. -- seriously, >_<
   badgeName = WiFi.macAddress();
