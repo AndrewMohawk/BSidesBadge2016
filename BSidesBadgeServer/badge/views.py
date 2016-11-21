@@ -212,7 +212,7 @@ class badgeCheckin(TemplateView):
 					b1.badge_nick = "";
 				if(b2.badge_nick == None):
 					b2.badge_nick = "";
-				logDescrip = "%s (%s) and %s (%s) are on the same team. improving %s!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,winner.badge_id,winner.badge_level);
+				logDescrip = "%s (%s) and %s (%s) are on the same team. improving %s (%s)!" % (b1.badge_id,b1.badge_nick,b2.badge_id,b2.badge_nick,winner.badge_id,winner.badge_nick);
 				logType = "Fight/Improve";
 				if(winner.badge_level > 5):
 					winner.badge_level = 5;
