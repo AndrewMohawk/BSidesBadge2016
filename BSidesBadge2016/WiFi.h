@@ -4,6 +4,7 @@
  */
 boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
 {
+  updating = true;
   WiFi.mode(WIFI_STA) ;
   //Serial.printf("Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode(WIFI_STA) ? "" : "Failed!");
   //Serial.print("[+] Connecting to network:");Serial.print(wSSID);Serial.print("-- password:");Serial.print(wPassword);Serial.println(".");
@@ -52,7 +53,7 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
   Serial.println(WiFi.localIP());
   Serial.print("Badge Number: ");
   Serial.println(badgeName);
-  
+  updating = false;
   return true;
 }
 
@@ -66,7 +67,7 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
 
 void initWiFi(boolean boot = false)
 {
-  
+  updating = true;
   // Try connect to the default WiFi SSID and Password
   boolean defaultConnect;
   
@@ -153,4 +154,5 @@ void initWiFi(boolean boot = false)
 
     
   }
+  updating = false;
 }

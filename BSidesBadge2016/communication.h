@@ -25,14 +25,18 @@ String decodeShift(String input, String key)
  */
 String makeHTTPRequest(String URL)
 {
+  updating = true;
+  //disableInterrupts()
   String decoded = "";
   URL = URL + "" + badgeName + "/";
+  Serial.println("[+] About to make HTTP Request");
   if (WiFi.status() == WL_CONNECTED) 
   {
       // Lets get the hash
       http.begin(hashEndPoint + "" + badgeName + "/");
       
       int httpCode = http.GET();
+      Serial.println("[+] HTTP Request completed");
       if(httpCode > 0) 
       {
           // file found at server
@@ -42,7 +46,7 @@ String makeHTTPRequest(String URL)
               Serial.println("[+] Got Key for decoding:" + hashkey);
               http.end();
 
-
+              Serial.println("[+] Starting fetch");
               http.begin(URL); 
               http.addHeader("Content-Type", "application/x-www-form-urlencoded");
               String postString = "seen=[";
@@ -58,7 +62,9 @@ String makeHTTPRequest(String URL)
                 }
               }
               postString += "]";
-              int httpCode = http.POST(postString);      
+              Serial.println("[+] Making POST");
+              int httpCode = http.POST(postString);    
+              Serial.println("[+] POST complete");  
               // start connection and send HTTP header
               //int httpCode = http.GET();
               if(httpCode > 0) 
@@ -92,7 +98,7 @@ String makeHTTPRequest(String URL)
   {
     initWiFi();
   }
-
+  updating = false;
   return decoded;
 }
 
@@ -161,12 +167,13 @@ void fetchStatus()
 void transmitBadge()
 {
   
-  
-  Serial.print("[+] IR TX: ");
-  
-  Serial.println(badgeNumber,HEX);
-  irsend.sendSony(badgeNumber, 32);
- 
+  if(updating == false)
+  {
+    Serial.print("[+] IR TX: ");
+    
+    Serial.println(badgeNumber,HEX);
+    irsend.sendSony(badgeNumber, 32);
+  }
 }
 
 
@@ -174,8 +181,8 @@ void dump(decode_results *results) {
   int newBadge = results->value;
   //Serial.println("[+] IR RX");
 
-  //Serial.print("[*] IR RX: ");
-  //Serial.println(newBadge,HEX);
+  Serial.print("[*] IR RX: ");
+  Serial.println(newBadge,HEX);
 
   int count = results->rawlen;
   

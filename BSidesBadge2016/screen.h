@@ -28,8 +28,14 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
    display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(0, 0, String(level));
-  
-  display->drawXbm(8, 0, fullheart_width, fullheart_height, fullheart_bits);
+  if(updating == false)
+  {
+    display->drawXbm(8, 0, fullheart_width, fullheart_height, fullheart_bits);
+  }
+  else
+  {
+    display->drawXbm(8, 0, emptyheart_width, emptyheart_height, emptyheart_bits);
+  }
   
   
 

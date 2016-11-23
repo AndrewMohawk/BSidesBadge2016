@@ -79,6 +79,7 @@ void readShift()
   if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
   {
     lowPowerMode = true;
+    Serial.println("[+] Turning Power Off!");
     display.displayOff();
     darkness();
     

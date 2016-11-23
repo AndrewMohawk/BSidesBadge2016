@@ -21,6 +21,7 @@ OLEDDisplayUi ui     ( &display );
 /* Timer */
 #include "Timer.h"
 Timer t;                               //instantiate the timer object
+//Timer t2;
 
 /*Infrared */
 #include <IRremoteESP8266.h>
@@ -92,7 +93,7 @@ unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 200;  
 
 unsigned long lastAction = 0;
-unsigned long lastActionTimeout = 30000;
+unsigned long lastActionTimeout = 300000; //Go to panda in 5 minutes.
 
 bool lowPowerMode = false;
 byte currentShiftOut = 0;
@@ -122,19 +123,19 @@ int level = 1;
 #include <pgmspace.h>
 
 PROGMEM const char string_intro[]  = "          BSIDES Schedule      Use right pad to navigate.";  
-PROGMEM const char string_0[]      = "          08h00-09h15:         Coffee and Registration";   
-PROGMEM const char string_1[]      = "          09h15-09h30:       Grant Ongers - Welcome to BSides";
-PROGMEM const char string_2[]      = "          09h30-09h45:       Andrew MacPherson & Mike Davis - The BSides Badge";
-PROGMEM const char string_3[]      = "          10h00-10h30:        Neil Roebert Mi->NFC->TM: How to proxy NFC comms using Android";
-PROGMEM const char string_4[]      = "          10h45-11h00:       Coffee Break";
-PROGMEM const char string_5[]      = "          11h15-11h45:       Chris Le Roy: What the DLL?";
-PROGMEM const char string_6[]      = "          12h00-12h45:       Lunch";
-PROGMEM const char string_7[]      = "          13h00-13h30:       Ion Todd: Password Securit for humans";
-PROGMEM const char string_8[]      = "          13h45-15h15:       Robert Len: (In)Outsider Trading - Hacking stocks using public information";
-PROGMEM const char string_9[]      = "          14h30-14h45:       Coffee Break";
-PROGMEM const char string_10[]     = "          15h00-15h30:       Charl van der Walt: Love triangles in cyberspace. A tale about trust in 5 chapters";
-PROGMEM const char string_11[]     = "          15h45-16h00:       Thomas Underhay & Darryn Cull: SensePost XRDP Tool";
-PROGMEM const char string_12[]     = "          16h15-16h30:       BSides CPT 2016 Challenge";
+PROGMEM const char string_0[]      = "          08h00-09h30:         Registration and Tea/Coffee";   
+PROGMEM const char string_1[]      = "          09h30-09h45:       Grant Ongers - Opening and Welcome";
+PROGMEM const char string_2[]      = "          09h45-10h00:       Andrew MacPherson & Mike Davis - The BSides Badge";
+PROGMEM const char string_3[]      = "          10h00-10h45:        Neil Roebert Mi->NFC->TM: How to proxy NFC comms using Android";
+PROGMEM const char string_4[]      = "          10h45-11h15:       Coffee Break";
+PROGMEM const char string_5[]      = "          11h15-12h00:       Chris Le Roy: What the DLL?";
+PROGMEM const char string_6[]      = "          12h00-13h00:       Lunch";
+PROGMEM const char string_7[]      = "          13h00-13h45:       Charl van der Walt: Love triangles in cyberspace. A tale about trust in 5 chapters";
+PROGMEM const char string_8[]      = "          13h45-14h30:       Robert Len: (In)Outsider Trading - Hacking stocks using public information";
+PROGMEM const char string_9[]      = "          14h30-15h00:       Coffee Break";
+PROGMEM const char string_10[]     = "          15h00-15h45:       Ion Todd: Password Securit for humans";
+PROGMEM const char string_11[]     = "          15h45-16h15:       Thomas Underhay & Darryn Cull: SensePost XRDP Tool";
+PROGMEM const char string_12[]     = "          16h15-16h30:       Michael Rodger: Opening the Black Box – Software Security from a Hardware Perspective";
 PROGMEM const char string_13[]     = "          16h45-17h00:       Closing";
 const char * const BSidesSchedule [] PROGMEM = {string_intro,string_0,string_1,string_2,string_3,string_4,string_5,string_6,string_7,string_8,string_9,string_10,string_11,string_12,string_13};
 
@@ -143,14 +144,23 @@ int numScheduleItems = 13;
 int currentScheduleItem = 0;
 char currentSpeaker[120] = {0};
 
+
+
+// This array keeps function pointers to all frames
+
+
+//So we dont do IR when we are updating... or the badge CRASHES... right?
+bool updating = false;
+
+
+
+
 /* Helpers */
 #include "ShiftRegisters.h" // input/output registers
 #include "WiFi.h" // WiFi connections
 #include "communication.h" // Communications To/From server
 #include "screen.h" // Screen drawing functions
 
-
-// This array keeps function pointers to all frames
 FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4 };
 
 // how many frames are there?
@@ -159,7 +169,6 @@ int frameCount = 4;
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
-
 
 
 
@@ -217,9 +226,7 @@ initWiFi(true); // Initialise WiFi
   
 
   drawProgressBar(60, 70, "Configuring AI/IR",75);
-  irrecv.enableIRIn(); // Start the receiver
-  irsend.begin();
-  int tickEvent2 = t.every(5550, transmitBadge);
+  
   
   drawProgressBar(70, 80, "Hacking Planet..",75);
   
@@ -274,7 +281,14 @@ initWiFi(true); // Initialise WiFi
   ui.init();
   display.flipScreenVertically();
 
+  irrecv.enableIRIn(); // Start the receiver
+  irsend.begin();
+  int tickEvent2 = t.every(5550, transmitBadge);
+  
+  
   lastAction = millis();
+
+  
 
 }
 
@@ -289,7 +303,9 @@ initWiFi(true); // Initialise WiFi
 
 
 void loop() {
+  
   int remainingTimeBudget = 0;
+  
   if(lowPowerMode == false)
   {
     remainingTimeBudget = ui.update();
@@ -297,6 +313,7 @@ void loop() {
   else
   {
     t.update();
+    //t2.update();
   }
 
 
@@ -304,6 +321,18 @@ void loop() {
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
+    if(updating == false)
+    {
+      if (irrecv.decode(&results)) 
+      {
+        dump(&results);
+        if(updating == false) // it should still not be updating...
+        {
+          irrecv.resume(); // Receive the next value
+        }
+          
+      }
+    }
 
     currTime = millis();
     
@@ -318,12 +347,13 @@ void loop() {
     {
       if(lowPowerMode == false)
       {
+      display.displayOn();
       display.clear();
       display.drawXbm(0, 16, sleepingpanda_width, sleepingpanda_height, sleepingpanda_bits);
       display.display();
       lowPowerMode = true;
       setOutShift(0);
-      
+      Serial.println("[+] Panda Mode!");
       }
       
 
@@ -346,13 +376,11 @@ void loop() {
     
     // put your main code here, to run repeatedly:
     t.update();
-
-    if (irrecv.decode(&results)) 
-    {
-      dump(&results);
-      irrecv.resume(); // Receive the next value
-    }
+    
    
+    
+    
+    
   }
   
  
