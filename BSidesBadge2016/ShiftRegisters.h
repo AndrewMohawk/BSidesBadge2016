@@ -52,7 +52,7 @@ void twirl(int numTimes = 1)
 void readShift()
 {
    int currentFrame = ui.getUiState()->currentFrame;
-
+String thisBut = "";
   int inputPin = 1;
   int buttonPressedVal = 1; //Depending on how buttons are wired
   digitalWrite(pinStcp, LOW);
@@ -86,6 +86,7 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Right))
   {
+    thisBut = "R";
     display.displayOn();
     ui.nextFrame();
     lowPowerMode = false;
@@ -94,6 +95,7 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Left))
   {
+    thisBut = "L";
     display.displayOn();
     ui.previousFrame();
     lowPowerMode = false;
@@ -101,27 +103,48 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Top))
   {
+    thisBut = "U";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
   }
   else if(buttonVals & (1 << P1_Bottom))
   {
+    thisBut = "D";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
   }
   else if(buttonVals & (1 << P2_Top))
   {
+    thisBut = "B";
     lowPowerMode = false;
     display.displayOn();
+    if (currentFrame == 3)
+    {
+      if(Challenges[currentListedChallenge] == "Konami")
+      {
+        konamiCode();
+      }
+      else if(Challenges[currentListedChallenge] == "Alias")
+      {
+        playAlias();
+      }
+      else if(completedChallenges > 0)
+      {
+        playText(Challenges[currentListedChallenge]);
+      }
+    }
+    
     lastAction = millis();
     Serial.print("Free Memory:");
     Serial.println(ESP.getFreeHeap());
+    
   }
   else if(buttonVals & (1 << P2_Left))
   {
-    if (currentFrame == 3)
+    thisBut = "A";
+    if (currentFrame == 2)
     {
       if(currentScheduleItem < 1)
       {
@@ -133,6 +156,19 @@ void readShift()
       }
       strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
     }
+
+    if (currentFrame == 3)
+    {
+      if(currentListedChallenge < 1)
+      {
+        currentListedChallenge = completedChallenges - 1;
+      }
+      else
+      {
+        currentListedChallenge--;
+      }
+      
+    }
     
     
     lowPowerMode = false;
@@ -141,13 +177,15 @@ void readShift()
   }
   else if(buttonVals & (1 << P2_Bottom))
   {
+    thisBut = "C";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
   }
   else if(buttonVals & (1 << P2_Right))
   {
-    if (currentFrame == 3)
+    thisBut = "D";
+    if (currentFrame == 2)
     {
       if(currentScheduleItem > numScheduleItems)
       {
@@ -160,6 +198,19 @@ void readShift()
 
       strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
     }
+
+    if (currentFrame == 3)
+    {
+      if(currentListedChallenge > completedChallenges-2)
+      {
+        currentListedChallenge = 0;
+      }
+      else
+      {
+        currentListedChallenge++;
+      }
+      
+    }
     
     
     display.displayOn();
@@ -168,6 +219,24 @@ void readShift()
   }
 
 
+
+if (thisBut != "")
+{
+  lastButtons = lastButtons + thisBut;
+  if(lastButtons.length() > 10)
+  {
+    lastButtons = lastButtons.substring(1);
+  }
+}
+//Serial.println(lastButtons + "!");
+if(lastButtons == "UUDDLRLRAB")
+{
+  if(addChallenge("Konami"))
+  {
+    playNinja();
+  }
+  lastButtons = "";
+}
   
   
   

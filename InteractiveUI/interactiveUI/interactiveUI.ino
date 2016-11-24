@@ -87,7 +87,7 @@ unsigned int badgeNumber;
 
 
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 200;    // the debounce time; increase if the output flickers
+unsigned long debounceDelay = 150;    // the debounce time; increase if the output flickers
 
 unsigned long lastPWMTime = 0;  
 unsigned long PWMDelay = 10;   
@@ -99,13 +99,14 @@ String alias = "AndrewM";
 String badgeVerifyCode = "";
 int level = 1;
 
+String lastButtons = "";
 
 
 #include <pgmspace.h>
 
 
 //Speaker information
-PROGMEM const char string_intro[]  = "          BSIDES Schedule      Use right pad to navigate.";  
+PROGMEM const char string_intro[]  = "      BSIDES Schedule      Use right pad to navigate.";  
 PROGMEM const char string_0[]      = "          08h00-09h15:         Coffee and Registration";   
 PROGMEM const char string_1[]      = "          09h15-09h30:       Grant Ongers - Welcome to BSides";
 PROGMEM const char string_2[]      = "          09h30-09h45:       Andrew MacPherson & Mike Davis - The BSides Badge";
@@ -152,28 +153,19 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->drawString(128, 0, team);
   
 }
-
 void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // draw an xbm image.
-  // Please note that everything that should be transitioned
-  // needs to be drawn relative to x and y
-  //display->drawXbm(x,y+16, tblmnt_width, tblmnt_height, tblmnt_bits);
-  //strcpy_P(currentSpeaker, (char*)pgm_read_word(&(BSidesSchedule[currentScheduleItem]))); 
-  //currentSpeaker = FPSTR(BSidesSchedule[currentScheduleItem]);
-  //strcpy_P(currentSpeaker, (char*)pgm_read_word(&(BSidesSchedule[1])));
-  //display->drawStringMaxWidth(0 + x, 10 + y, 128,currentSpeaker);
-  //strcpy_P(buffer, (char)pgm_read_word(&(string_table[1]))); 
-  //display->drawStringMaxWidth(0 + x, 10 + y, 128,buffer);
-  //String currentSpeakertest = FPSTR(BSidesSchedule[currentScheduleItem]);
-  //display->drawStringMaxWidth(0 + x, 10 + y, 128,currentSpeakertest);
   
- // display->drawStringMaxWidth(0 + x, 10 + y, 128,buff);
- //strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[5])));
- //Serial.println(currentSpeaker);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  //display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
-  display->drawStringMaxWidth(0 + x, 13 + y, 128,currentSpeaker);
+  if(currentScheduleItem == 0)
+  {
+    display->drawXbm(x+50, y+15, camera_width, camera_height, camera_bits);
+    display->drawStringMaxWidth(0 + x, 40 + y, 128,currentSpeaker);
+  }
+  else
+  {
+    display->drawStringMaxWidth(0 + x, 13 + y, 128,currentSpeaker);
+  }
 }
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -230,27 +222,40 @@ void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   //qrcode.create("http://www.andrewmohawk.com/");
 }
 
-void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demo for drawStringMaxWidth:
-  // with the third parameter you can define the width after which words will be wrapped.
-  // Currently only spaces and "-" are allowed for wrapping
-  /*display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawStringMaxWidth(0 + x, 16 + y, 128, "9h30 9h45:        Welcome    9h45 10h00: BSides Badge  10-10.30: How To Proxy NFC Comms 10.45-11.15:  Coffee 11.15-11.45:What the DLL?");
-*/
+
+String Challenges[10];
+
+//myChallenges[0] = "Konami"
+//myChallenges[1] = "Alias"
+
+int completedChallenges = 0;
+int currentListedChallenge = 0;
+
+void ChallengeFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+
+ display->drawXbm(x, y+16, challenges_width, challenges_height, challenges_bits);
  display->setTextAlignment(TEXT_ALIGN_CENTER);
  display->setFont(ArialMT_Plain_10);
- display->drawString(x+1,y+16,"9h30-9h45");
- display->drawString(x+1,y+26,"Grant Ongers");
- display->drawStringMaxWidth(x+30,y+36,128,"Welcome and Intro");
+ display->drawXbm(x+50, y+38, uparrow_width, uparrow_height, uparrow_bits);
+ display->drawString(x+80,y+35," = Play");
  
-
+  
+ display->drawXbm(x+5, y+50, leftarrow_width, leftarrow_height, leftarrow_bits);
+ if(completedChallenges == 0)
+ {
+  display->drawString(x+70,y+50,"None completed ");
+ }
+ else
+ {
+   display->drawString(x+70,y+50,Challenges[currentListedChallenge]);
+ }
+ display->drawXbm(x+120, y+50, rightarrow_width, rightarrow_height, rightarrow_bits);
   
 }
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4 };
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, ChallengeFrame };
 
 // how many frames are there?
 int frameCount = 4;
@@ -457,7 +462,7 @@ void readShift()
   delayMicroseconds(20);
   digitalWrite(pinStcp, HIGH);
   byte buttonVals = 0;
-  
+  String thisBut = "";
   
   for (int i=0; i<8; i++)
   {
@@ -472,7 +477,10 @@ void readShift()
     
     digitalWrite(pinShcp,HIGH);
   }
-
+  if(buttonVals != 0)
+  {
+    registerWrite(0,1);
+  }
    
   if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
   {
@@ -484,6 +492,7 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Right))
   {
+    thisBut = "R";
     display.displayOn();
     ui.nextFrame();
     lowPowerMode = false;
@@ -492,6 +501,7 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Left))
   {
+    thisBut = "L";
     display.displayOn();
     ui.previousFrame();
     lowPowerMode = false;
@@ -499,26 +509,44 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Top))
   {
+    thisBut = "U";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
   }
   else if(buttonVals & (1 << P1_Bottom))
   {
+    thisBut = "D";
+
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
   }
   else if(buttonVals & (1 << P2_Top))
   {
+    thisBut = "B";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
+    
+    if (currentFrame == 3)
+    {
+      if(Challenges[currentListedChallenge] == "Konami")
+      {
+        konamiCode();
+      }
+      else if(Challenges[currentListedChallenge] == "Alias")
+      {
+        playAlias();
+      }
+    }
     Serial.println(ESP.getFreeHeap());
     
   }
   else if(buttonVals & (1 << P2_Left))
   {
+    
+    thisBut = "A";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
@@ -534,16 +562,34 @@ void readShift()
       }
       strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
     }
-    Serial.println(ESP.getFreeHeap());
+
+    if (currentFrame == 3)
+    {
+      if(currentListedChallenge < 1)
+      {
+        currentListedChallenge = completedChallenges - 1;
+      }
+      else
+      {
+        currentListedChallenge--;
+      }
+      
+    }
+
+
+    
   }
   else if(buttonVals & (1 << P2_Bottom))
   {
+    thisBut = "C";
     lowPowerMode = false;
     display.displayOn();
     lastAction = millis();
+    playNinja();
   }
   else if(buttonVals & (1 << P2_Right))
   {
+    thisBut = "D";
     darkness();
     display.displayOn();
     lastAction = millis();
@@ -560,16 +606,131 @@ void readShift()
       }
       strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
     }
+    if (currentFrame == 3)
+    {
+      if(currentListedChallenge > completedChallenges-2)
+      {
+        currentListedChallenge = 0;
+      }
+      else
+      {
+        currentListedChallenge++;
+      }
+      
+    }
+
+
     
     Serial.println(ESP.getFreeHeap());
   }
 
 
+  if (thisBut != "")
+    {
+      lastButtons = lastButtons + thisBut;
+      if(lastButtons.length() > 10)
+      {
+        lastButtons = lastButtons.substring(1);
+      }
+    }
+    //Serial.println(lastButtons + "!");
+    if(lastButtons == "UUDDLRLRAB")
+    {
+      //konamiCode();
+      if(addChallenge("Konami"))
+      {
+        playNinja();
+      }
+      lastButtons = "";
+    }
+
+
+
+  if(buttonVals != 0)
+  {
+    registerWrite(0,0);
+  }
   
   
   
 
 
+}
+
+boolean addChallenge(String c_name)
+{
+  boolean found = false;
+  for(int i=0;i<completedChallenges;i++)
+  {
+    if(Challenges[i] == c_name)
+    {
+      found == true;
+    }
+  }
+
+  if(found == false)
+  {
+    
+    Challenges[completedChallenges] = c_name;
+    completedChallenges++;
+    currentListedChallenge = 0;
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void konamiCode()
+{
+  Serial.println("[+] KONAMI CODE!");
+  int y = 0;
+  for (int16_t x=0; x<DISPLAY_WIDTH; x+=4) {
+    display.clear();
+    y = random(0,15);
+    display.drawXbm(x, y, skeleton_width, skeleton_height, skeleton_bits);
+    display.display();
+    delay(100);
+  }
+}
+
+void playAlias()
+{
+  Serial.println("[+] Play Alias!");
+  int x = 0;
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  for (int16_t y=0; y<DISPLAY_HEIGHT; y+=2) {
+    display.clear();
+    x = random(0,DISPLAY_WIDTH/2);
+    display.drawString(x, y, alias);
+    display.display();
+    delay(100);
+  }
+}
+
+void playNinja()
+{
+  Serial.println("[+] Challenge completed!");
+  
+  int y = 0;
+  for (int16_t x=DISPLAY_WIDTH; x>=0; x-=5) {
+    display.clear();
+    y = 0;
+    display.drawXbm(x, y, ninja_width, ninja_height, ninja_bits);
+    display.display();
+    
+  }
+  
+  display.invertDisplay();
+  delay(300);
+  display.normalDisplay();
+  delay(300);
+  display.invertDisplay();
+  delay(300);
+  display.normalDisplay();
+  delay(300);
 }
 
 
@@ -603,10 +764,10 @@ void loop() {
     currTime = millis();
     if(currTime - lastAction > lastActionTimeout)
     {
-      Serial.println("Oh noes, nothing happened!");
+      /*Serial.println("Oh noes, nothing happened!");
       Serial.println(currTime - lastAction);
       Serial.println(currTime);
-      Serial.println(lastAction);
+      Serial.println(lastAction);*/
       if(lowPowerMode == false)
       {
       display.clear();

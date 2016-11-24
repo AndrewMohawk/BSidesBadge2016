@@ -78,7 +78,7 @@ struct WiFiSettings {
 
 
 /* Endpoints for badges */
-String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/";
+String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
 //String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
 //String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
@@ -90,7 +90,7 @@ unsigned int badgeNumber;
 /* UI functions for debouncing, last keypressed for 'sleep', lowPowerMode and fake PWM */
 
 unsigned long lastDebounceTime = 0; 
-unsigned long debounceDelay = 200;  
+unsigned long debounceDelay = 150;  
 
 unsigned long lastAction = 0;
 unsigned long lastActionTimeout = 300000; //Go to panda in 5 minutes.
@@ -114,7 +114,10 @@ String badgeVerifyCode = "NoCode";
 int level = 1;
 
 
-
+String Challenges[10];
+int completedChallenges = 0;
+int currentListedChallenge = 0;
+String lastButtons = "";
 
 
 //Speaker information
@@ -122,7 +125,7 @@ int level = 1;
 
 #include <pgmspace.h>
 
-PROGMEM const char string_intro[]  = "          BSIDES Schedule      Use right pad to navigate.";  
+PROGMEM const char string_intro[]  = "      BSIDES Schedule      Use right pad to navigate.";  
 PROGMEM const char string_0[]      = "          08h00-09h30:         Registration and Tea/Coffee";   
 PROGMEM const char string_1[]      = "          09h30-09h45:       Grant Ongers - Opening and Welcome";
 PROGMEM const char string_2[]      = "          09h45-10h00:       Andrew MacPherson & Mike Davis - The BSides Badge";
@@ -156,12 +159,16 @@ bool updating = false;
 
 
 /* Helpers */
+#include "general.h" // general functions
+#include "screen.h" // Screen drawing functions
 #include "ShiftRegisters.h" // input/output registers
 #include "WiFi.h" // WiFi connections
 #include "communication.h" // Communications To/From server
-#include "screen.h" // Screen drawing functions
 
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4 };
+
+
+
+FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame };
 
 // how many frames are there?
 int frameCount = 4;
@@ -199,30 +206,42 @@ pinMode(pinStcp, OUTPUT);
   display.setFont(ArialMT_Plain_10);
 
 
-initWiFi(true); // Initialise WiFi
-  drawProgressBar(0, 10, "Display Init..",50);
-  //Setup Serial Connection at ESP debug speed ( so we get debug information as well )
+  for (int16_t i=DISPLAY_HEIGHT; i>0; i-=4) {
+    display.drawLine(0, i, DISPLAY_WIDTH, i);
+    display.display();
+    delay(50);
+  }
+
+  display.clear();
+  display.drawXbm(0, 0, monerologo_width, monerologo_height, monerologo_bits);
+  display.display();
+  delay(450);
+  
+
+  initWiFi(true); // Initialise WiFi
+  drawProgressBar(0, 25, "Initialising WiFi..",10);
+ 
  
   
   //Setup EEPROM - 512 bytes!
   EEPROM.begin(512);
 
-  drawProgressBar(10, 20, "EEPROM ..",50);
+  drawProgressBar(25, 30, "EEPROM ..",50);
 
   
-  drawProgressBar(20, 30, "Serial ..",50);
+  drawProgressBar(30, 40, "Serial ..",50);
   Serial.setDebugOutput(true);
 
   
-  drawProgressBar(30, 50, "Connecting to Wifi..",100);
   
 
+  
+  
+  drawProgressBar(40, 60, "Joining network..",100);
+  fetchStatus(); // fetch network status
   darkness();
   twirl();
-  
-  drawProgressBar(50, 60, "Joining network..",100);
-  fetchStatus(); // fetch network status
-  int fetchStatusEvent = t.every(15000, fetchStatus); // Set it to run every 15 seconds after this
+  int fetchStatusEvent = t.every(25000, fetchStatus); // Set it to run every 15 seconds after this
   
 
   drawProgressBar(60, 70, "Configuring AI/IR",75);

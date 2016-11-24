@@ -123,7 +123,11 @@ void fetchStatus()
     //String statusmsg          = root["statusmsg"];
     level = root["level"];
     team = root["team"].asString();
-    alias = root["alias"].asString();
+    String tmpalias = root["alias"].asString();
+    if(alias != tmpalias)
+    {
+      alias = tmpalias;
+    }
     badgeVerifyCode = root["verify"].asString();
     
      
@@ -142,15 +146,24 @@ void fetchStatus()
     }
     else
     {
-      Serial.println("Not updating.");
+      //Serial.println("Not updating.");
     }
     
 
-
+    boolean newChallengeAdded = false;
     for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
     {
         const char* value = *it;
-        Serial.print("[+] Won Challenge:");Serial.println(value);   
+        
+        if(addChallenge(value))
+        {
+          newChallengeAdded = true;
+        }
+        //Serial.print("[+] Won Challenge:");Serial.println(value);   
+    }
+    if (newChallengeAdded == true)
+    {
+      playNinja();
     }
    
     
@@ -181,8 +194,8 @@ void dump(decode_results *results) {
   int newBadge = results->value;
   //Serial.println("[+] IR RX");
 
-  Serial.print("[*] IR RX: ");
-  Serial.println(newBadge,HEX);
+  //Serial.print("[*] IR RX: ");
+  //Serial.println(newBadge,HEX);
 
   int count = results->rawlen;
   

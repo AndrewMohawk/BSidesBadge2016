@@ -71,7 +71,7 @@ void initWiFi(boolean boot = false)
   // Try connect to the default WiFi SSID and Password
   boolean defaultConnect;
   
-  defaultConnect = wifiConnect(defaultSSID,defaultPassword,30);
+  defaultConnect = wifiConnect(defaultSSID,defaultPassword,100);
 
   
   if(defaultConnect == true)
