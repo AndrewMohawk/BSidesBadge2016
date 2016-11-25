@@ -115,7 +115,7 @@ void ChallengeFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
   
 }
 
-void konamiCode()
+void konamiCode(int delaySpeed=100)
 {
   Serial.println("[+] KONAMI CODE!");
   int y = 0;
@@ -124,7 +124,7 @@ void konamiCode()
     y = random(0,15);
     display.drawXbm(x, y, skeleton_width, skeleton_height, skeleton_bits);
     display.display();
-    delay(100);
+    delay(delaySpeed);
   }
 }
 

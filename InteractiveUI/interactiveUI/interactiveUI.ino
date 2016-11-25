@@ -682,16 +682,16 @@ boolean addChallenge(String c_name)
   }
 }
 
-void konamiCode()
+void konamiCode(delaySpeed = 100)
 {
-  Serial.println("[+] KONAMI CODE!");
+  //Serial.println("[+] KONAMI CODE!");
   int y = 0;
   for (int16_t x=0; x<DISPLAY_WIDTH; x+=4) {
     display.clear();
     y = random(0,15);
     display.drawXbm(x, y, skeleton_width, skeleton_height, skeleton_bits);
     display.display();
-    delay(100);
+    delay(delaySpeed);
   }
 }
 

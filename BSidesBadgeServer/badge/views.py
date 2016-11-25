@@ -206,7 +206,7 @@ class badgeCheckin(TemplateView):
 				logType = "Fight/Defect";
 				b1.save()
 				
-			elif(random.randint(1,2) == 1):
+			elif(random.randint(1,15) == 1):
 				winner = random.choice([b1, b2])
 				winner.badge_level = winner.badge_level + diff
 				if settings.DEBUG:

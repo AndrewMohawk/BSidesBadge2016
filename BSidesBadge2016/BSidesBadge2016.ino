@@ -114,7 +114,7 @@ String badgeVerifyCode = "NoCode";
 int level = 1;
 
 
-String Challenges[10];
+String Challenges[10] = {"Pong"};
 int completedChallenges = 0;
 int currentListedChallenge = 0;
 String lastButtons = "";
@@ -156,14 +156,33 @@ char currentSpeaker[120] = {0};
 bool updating = false;
 
 
-
+/* Pong Stuff */
+int pong_p1score = 0;
+int pong_p2score = 0;
+unsigned int pong_delay = 150;
+unsigned int pong_time = 0;
+int pong_p1place = 0;
+int pong_p2place = 0;
+int pong_ball_x = 5;
+int pong_ball_y = 5;
+int pong_paddle_size = 10;
+int pong_ballmovement = 4;
+int pong_startmovement = pong_ballmovement;
+int pong_ball_size = 2;
+int pong_paddle_movespeed = 5;
+int pong_speed_multiplyer = 1.2;
+bool pong_ball_up = false;
+bool pong_ball_right = true;
 
 /* Helpers */
 #include "general.h" // general functions
 #include "screen.h" // Screen drawing functions
+
 #include "ShiftRegisters.h" // input/output registers
+
 #include "WiFi.h" // WiFi connections
 #include "communication.h" // Communications To/From server
+
 
 
 

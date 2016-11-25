@@ -1,4 +1,5 @@
 
+
 void registerWrite(int whichPin, int whichState) {
 // the bits you want to send
   byte bitsToSend = 0;
@@ -48,32 +49,50 @@ void twirl(int numTimes = 1)
   }
 }
 
+byte readShiftByte()
+{
+  currTime = millis();
+    
+  if ((currTime - lastDebounceTime) > debounceDelay) 
+  {
+    
+    lastDebounceTime = currTime;
+    
+    int inputPin = 1;
+    byte buttonVals = 0;
+    int buttonPressedVal = 1; //Depending on how buttons are wired
+    
+    digitalWrite(pinStcp, LOW);
+    delayMicroseconds(20);
+    digitalWrite(pinStcp, HIGH);
+    
+    
+    for (int i=0; i<8; i++)
+    {
+      digitalWrite(pinShcp,LOW);
+      delayMicroseconds(20);
+      inputPin = digitalRead(pinDataIn);
+      if(inputPin == buttonPressedVal)
+       {
+        Serial.println("[.] Button " + String(i) + " pressed!");
+        buttonVals = buttonVals | (1 << i);
+       }
+      
+      digitalWrite(pinShcp,HIGH);
+    }
+    return buttonVals;
+  }
+  return 0;
+}
+
+#include "pong.h" // Communications To/From server
 
 void readShift()
 {
    int currentFrame = ui.getUiState()->currentFrame;
-String thisBut = "";
-  int inputPin = 1;
-  int buttonPressedVal = 1; //Depending on how buttons are wired
-  digitalWrite(pinStcp, LOW);
-  delayMicroseconds(20);
-  digitalWrite(pinStcp, HIGH);
-  byte buttonVals = 0;
   
-  
-  for (int i=0; i<8; i++)
-  {
-    digitalWrite(pinShcp,LOW);
-    delayMicroseconds(20);
-    inputPin = digitalRead(pinDataIn);
-    if(inputPin == buttonPressedVal)
-     {
-      Serial.println("[.] Button " + String(i) + " pressed!");
-      buttonVals = buttonVals | (1 << i);
-     }
-    
-    digitalWrite(pinShcp,HIGH);
-  }
+  byte buttonVals = readShiftByte();
+  String thisBut = "";
 
    
   if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
@@ -129,6 +148,12 @@ String thisBut = "";
       else if(Challenges[currentListedChallenge] == "Alias")
       {
         playAlias();
+      }
+      else if(Challenges[currentListedChallenge] == "Pong")
+      {
+        
+        pong_time = millis();
+        pong_runPong();
       }
       else if(completedChallenges > 0)
       {
@@ -232,6 +257,15 @@ if (thisBut != "")
 if(lastButtons == "UUDDLRLRAB")
 {
   if(addChallenge("Konami"))
+  {
+    playNinja();
+  }
+  lastButtons = "";
+}
+
+if(lastButtons == "LRLRLRLRLR")
+{
+  if(addChallenge("Pong"))
   {
     playNinja();
   }
