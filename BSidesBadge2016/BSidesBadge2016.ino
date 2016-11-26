@@ -65,8 +65,8 @@ int numBadges = 0;
 HTTPClient http;
 
 /* Default WiFi SSID details */
-char defaultSSID[32]     = "EmpireRecords_Devices";
-char defaultPassword[32] = "loldevices";
+char defaultSSID[32]     = "highway";
+char defaultPassword[32] = "dangerzone";
 //char defaultSSID[32]     = "AndrewMohawkGlobal";
 //char defaultPassword[32] = "0126672737";
 
