@@ -359,9 +359,20 @@ class badgeCheckin(TemplateView):
 		
 		teamInt = thisBadge.badge_team.team_binary
 		
-		lvl = pow(2,(thisBadge.badge_level)) -1
+		#lvl = pow(2,(thisBadge.badge_level)) -1
+		#because the shift register is wired diff:
+		lvl = 2; # level 1;
+		if(thisBadge.badge_level == 2):
+			lvl = 6;
+		if(thisBadge.badge_level == 3):
+			lvl = 14;
+		if(thisBadge.badge_level == 4):
+			lvl = 30;
+		if(thisBadge.badge_level == 5):
+			lvl = 31;
+		
 		shiftVal = teamInt + lvl
-		#{"shift":254,"status":"noob","challenges":[1,3,5,7,2]}
+		
 		jsonResponse = {}
 		
 		jsonResponse["shift"] = shiftVal

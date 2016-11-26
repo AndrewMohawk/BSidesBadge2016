@@ -114,7 +114,7 @@ String badgeVerifyCode = "NoCode";
 int level = 1;
 
 
-String Challenges[10] = {"Pong"};
+String Challenges[10];
 int completedChallenges = 0;
 int currentListedChallenge = 0;
 String lastButtons = "";
