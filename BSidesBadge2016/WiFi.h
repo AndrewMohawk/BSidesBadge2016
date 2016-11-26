@@ -128,7 +128,7 @@ void initWiFi(boolean boot = false)
       
       
       boolean SerialConnect;
-      SerialConnect = wifiConnect(SerialSSID,SerialPassword,10);
+      SerialConnect = wifiConnect(SerialSSID,SerialPassword,100);
 
       if(SerialConnect == true)
       {
