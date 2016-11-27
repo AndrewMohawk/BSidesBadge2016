@@ -20,6 +20,7 @@ void pong_drawBall()
     {
       pong_ball_right = true;
       pong_ballmovement = pong_ballmovement * pong_speed_multiplyer;
+      pong_ball_x = 4;
     }
     else
     {
@@ -38,6 +39,7 @@ void pong_drawBall()
     {
       pong_ball_right = false;
       pong_ballmovement = pong_ballmovement * pong_speed_multiplyer;
+      pong_ball_x = 125;
     }
     else
     {

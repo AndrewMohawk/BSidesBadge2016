@@ -102,6 +102,7 @@ void readShift()
     display.displayOff();
     darkness();
     
+    
   }
   else if(buttonVals & (1 << P1_Right))
   {
@@ -259,6 +260,8 @@ if(lastButtons == "UUDDLRLRAB")
   if(addChallenge("Konami"))
   {
     playNinja();
+    delay(200);
+    konamiCode();
   }
   lastButtons = "";
 }

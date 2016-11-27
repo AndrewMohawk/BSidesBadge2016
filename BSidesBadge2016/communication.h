@@ -105,7 +105,16 @@ String makeHTTPRequest(String URL)
 
 void fetchStatus()
 {
+  if(lowPowerMode == false)
+  {
   
+  display.clear();
+  display.drawXbm(58,22, emptyheart_width, emptyheart_height, emptyheart_bits);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.drawString(65,42,"Updating...");
+  display.display();
+
+  }
   String statusResult = makeHTTPRequest(checkInEndPoint);
   if(statusResult != "")
   {
@@ -119,7 +128,14 @@ void fetchStatus()
         return;
     }
     darkness();
-    
+    if(lowPowerMode == false)
+    {
+    display.clear();
+    display.drawXbm(58,22, halfheart_width, halfheart_height, halfheart_bits);
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.drawString(65,42,"Updating...");
+    display.display();
+    }
     //String statusmsg          = root["statusmsg"];
     level = root["level"];
     team = root["team"].asString();
@@ -149,7 +165,7 @@ void fetchStatus()
       //Serial.println("Not updating.");
     }
     
-
+    
     boolean newChallengeAdded = false;
     for(JsonArray::iterator it=challengesWon.begin(); it!=challengesWon.end(); ++it) 
     {
@@ -172,8 +188,14 @@ void fetchStatus()
   {
     Serial.println("[!] Error! invalid status!" );
   }
-  
-  
+  if(lowPowerMode == false)
+  {
+  display.clear();
+  display.drawXbm(58,22, fullheart_width, fullheart_height, fullheart_bits);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.drawString(65,42,"Updating...");
+  display.display();
+  }
 }
 
 

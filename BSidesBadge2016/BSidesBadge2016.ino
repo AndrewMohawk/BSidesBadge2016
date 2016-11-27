@@ -174,6 +174,10 @@ int pong_speed_multiplyer = 1.2;
 bool pong_ball_up = false;
 bool pong_ball_right = true;
 
+
+String badgeVersion = "0.44";
+String badgeGitHash = "9d280c50849a8ec92e1c2766d6f1e8aad44e87b0";
+
 /* Helpers */
 #include "general.h" // general functions
 #include "screen.h" // Screen drawing functions
@@ -187,10 +191,10 @@ bool pong_ball_right = true;
 
 
 
-FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame };
+FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame,AboutFrame};
 
 // how many frames are there?
-int frameCount = 4;
+int frameCount = 5;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
@@ -204,6 +208,7 @@ int overlaysCount = 1;
  */
 void setup() {
   Serial.begin(74880);
+  initWiFi(true); // Initialise WiFi -- this MUST happen before screen.
   
   strcpy_P(currentSpeaker, (char*) pgm_read_dword(&(BSidesSchedule[currentScheduleItem])));
   
@@ -237,7 +242,7 @@ pinMode(pinStcp, OUTPUT);
   delay(450);
   
 
-  initWiFi(true); // Initialise WiFi
+  
   drawProgressBar(0, 25, "Initialising WiFi..",10);
  
  
@@ -385,13 +390,17 @@ void loop() {
     {
       if(lowPowerMode == false)
       {
-      display.displayOn();
-      display.clear();
-      display.drawXbm(0, 16, sleepingpanda_width, sleepingpanda_height, sleepingpanda_bits);
-      display.display();
-      lowPowerMode = true;
-      setOutShift(0);
-      Serial.println("[+] Panda Mode!");
+          display.displayOn();
+          display.clear();
+          display.drawXbm(0, 16, smallerpanda_width, smallerpanda_height, smallerpanda_bits);
+          display.setTextAlignment(TEXT_ALIGN_LEFT);
+          display.drawString(70,30,"Alias:");
+          display.drawString(70,40,alias);
+          
+          display.display();
+          lowPowerMode = true;
+          setOutShift(0);
+          Serial.println("[+] Panda Mode!");
       }
       
 

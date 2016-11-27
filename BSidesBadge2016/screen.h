@@ -115,6 +115,21 @@ void ChallengeFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
   
 }
 
+void AboutFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+
+ 
+ //display->drawXbm(x, y+13, aboutheader_width, aboutheader_height, aboutheader_bits);
+ display->setFont(ArialMT_Plain_10);
+ display->setTextAlignment(TEXT_ALIGN_CENTER);
+ display->drawString(x+60,y+14,"ABOUT");
+ display->setTextAlignment(TEXT_ALIGN_LEFT);
+ display->drawString(x+10,y+23,"Version:" + badgeVersion);
+ display->drawString(x+10,y+33,badgeGitHash.substring(0,19));
+ display->drawString(x+10,y+43,"@AndrewMohawk");
+ display->drawString(x+10,y+53,"@ElasticNinja");
+ 
+}
+
 void konamiCode(int delaySpeed=100)
 {
   Serial.println("[+] KONAMI CODE!");

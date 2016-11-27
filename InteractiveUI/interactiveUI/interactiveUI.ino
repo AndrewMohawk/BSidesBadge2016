@@ -253,12 +253,27 @@ void ChallengeFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
   
 }
 
+
+void AboutFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+
+ display->setTextAlignment(TEXT_ALIGN_CENTER);
+ display->drawXbm(x, y+13, aboutheader_width, aboutheader_height, aboutheader_bits);
+ display->setFont(ArialMT_Plain_10);
+ display->setTextAlignment(TEXT_ALIGN_LEFT);
+ display->drawString(x+10,y+30,"Version:" + badgeVersion);
+ display->drawStringMaxWidth(x+10,y+40,128,badgeGitHash);
+ display->drawString(x+10,y+50,"@AndrewMohawk");
+ display->drawString(x+10,y+60,"@AndrewMohawk");
+ 
+  
+}
+
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, ChallengeFrame };
+FrameCallback frames[] = { AboutFrame,drawFrame1, drawFrame2, drawFrame3, ChallengeFrame };
 
 // how many frames are there?
-int frameCount = 4;
+int frameCount = 5;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };

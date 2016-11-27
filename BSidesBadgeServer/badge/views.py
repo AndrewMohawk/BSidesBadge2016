@@ -49,6 +49,9 @@ class AESCipher:
 		return unpad(cipher.decrypt( enc[16:] ))
 
 
+		
+
+
 class badgeAddChallenge(FormView):
 	template_name = "addChallenge.html"
 	form_class = ChallengeForm
@@ -103,18 +106,18 @@ class badgeAddChallenge(FormView):
 				decrypted = False
 				try:
 					decrypted = t.decrypt(badgeHash)
-					print decrypted
+					
 				except Exception, e:
 					messages.success(self.request, "Invalid decryption: %s" % (e))
-					
+				
+				
 				if(decrypted == challenge.challenge_valid):
+				
 					messages.success(self.request, "Successfully updated badge '%s' and added challenge '%s'" % (badgeNum,challenge.challenge_name))
 					thisBadge.badge_challenges.add(challenge)
 				else:
 					messages.error(self.request,"Decoded string '%s' for challenge %s to did not produce correct key" % (badgeHash,challenge.challenge_name))
-			#thisBadge.badge_nick = badgeAlias
-			#thisBadge.save()
-			#messages.success(self.request, "Successfully updated badge '%s' to have alias '%s'" % (badgeNum,badgeAlias))
+			
 		else:
 			messages.warning(self.request, "Could not find badge with ID of '%s'! Please check and try again" % (badgeNum))
 		
@@ -157,7 +160,7 @@ class badgeGetHash(TemplateView):
 	def get(self, request, *args, **kwargs):
 		context = self.get_context_data(**kwargs)
 		badgeID = context["badgeID"]
-		#return super(RunnerProcess, self).render_to_response(context)
+		return super(RunnerProcess, self).render_to_response(context)
 		try:
 			thisBadge = Badge.objects.get(badge_id = badgeID)
 			thisBadge.badge_lastseen = datetime.now()
