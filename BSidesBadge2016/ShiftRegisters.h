@@ -98,9 +98,16 @@ void readShift()
   if(buttonVals == ((1 << P1_Bottom) | (1<<P2_Bottom)))
   {
     lowPowerMode = true;
-    Serial.println("[+] Turning Power Off!");
-    display.displayOff();
+    display.clear();
+    display.drawXbm(0, 0, charging_width, charging_height, charging_bits);
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.drawString(65,32,"Press Reset to start badge...");
+    display.display();
     darkness();
+    Serial.println("[+] Turning ESP Off!");
+    ESP.deepSleep(999999999*999999999U, WAKE_NO_RFCAL);
+    
+    
     
     
   }
@@ -150,7 +157,8 @@ void readShift()
       {
         playAlias();
       }
-      else if(Challenges[currentListedChallenge] == "Pong")
+      
+      else if(Challenges[currentListedChallenge] == "Pong" || Challenges[currentListedChallenge] == "RetroRom")
       {
         
         pong_time = millis();

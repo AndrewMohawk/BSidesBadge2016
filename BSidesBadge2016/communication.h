@@ -29,14 +29,14 @@ String makeHTTPRequest(String URL)
   //disableInterrupts()
   String decoded = "";
   URL = URL + "" + badgeName + "/";
-  Serial.println("[+] About to make HTTP Request");
+  //Serial.println("[+] About to make HTTP Request");
   if (WiFi.status() == WL_CONNECTED) 
   {
       // Lets get the hash
       http.begin(hashEndPoint + "" + badgeName + "/");
       
       int httpCode = http.GET();
-      Serial.println("[+] HTTP Request completed");
+      //Serial.println("[+] HTTP Request completed");
       if(httpCode > 0) 
       {
           // file found at server
@@ -46,7 +46,7 @@ String makeHTTPRequest(String URL)
               Serial.println("[+] Got Key for decoding:" + hashkey);
               http.end();
 
-              Serial.println("[+] Starting fetch");
+              //Serial.println("[+] Starting fetch");
               http.begin(URL); 
               http.addHeader("Content-Type", "application/x-www-form-urlencoded");
               String postString = "seen=[";
@@ -62,9 +62,9 @@ String makeHTTPRequest(String URL)
                 }
               }
               postString += "]";
-              Serial.println("[+] Making POST");
+              //Serial.println("[+] Making POST");
               int httpCode = http.POST(postString);    
-              Serial.println("[+] POST complete");  
+              //Serial.println("[+] POST complete");  
               // start connection and send HTTP header
               //int httpCode = http.GET();
               if(httpCode > 0) 
@@ -74,7 +74,7 @@ String makeHTTPRequest(String URL)
                       String payload = http.getString();
                       Serial.println("[+] Got Payload:" + payload);
                       decoded = decodeShift(payload,hashkey);
-                      Serial.println("[+] Decrypted: " + decoded);
+                      Serial.println("[+] Decrypted.");
 
                       numBadges = 0;
                   }
@@ -124,7 +124,7 @@ void fetchStatus()
 
     if (!root.success()) 
     {
-        Serial.println("[!] parseObject() failed");
+        //Serial.println("[!] parseObject() failed");
         return;
     }
     darkness();
@@ -154,7 +154,7 @@ void fetchStatus()
     if(lowPowerMode == false)
     {
       byte shift = root["shift"];
-      Serial.println(shift,BIN);
+      
       digitalWrite(latchPin, LOW); 
       currentShiftOut = shift;
       shiftOut(dataPin, clockPin,MSBFIRST,  shift); 
@@ -186,7 +186,7 @@ void fetchStatus()
   }
   else
   {
-    Serial.println("[!] Error! invalid status!" );
+    //Serial.println("[!] Error! invalid status!" );
   }
   if(lowPowerMode == false)
   {
@@ -204,9 +204,9 @@ void transmitBadge()
   
   if(updating == false)
   {
-    Serial.print("[+] IR TX: ");
+    //Serial.print("[+] IR TX: ");
     
-    Serial.println(badgeNumber,HEX);
+    //Serial.println(badgeNumber,HEX);
     irsend.sendSony(badgeNumber, 32);
   }
 }
@@ -229,11 +229,15 @@ void dump(decode_results *results) {
       int newBadge = results->value;
      // char charBuf[50];
       //String(newBadge).toCharArray(charBuf, 50);
-      Serial.print("[*] Received Badge via IR: ");Serial.println(newBadge,HEX);
+      
       if(newBadge == badgeNumber)
       {
-        Serial.println("[!] This is me! LOL!");
+        //Serial.println("[!] This is me! LOL!");
         return;
+      }
+      else
+      {
+        Serial.print("[*] Received Badge via IR: ");Serial.println(newBadge,HEX);
       }
       
       bool seenBadge = false;
@@ -257,13 +261,13 @@ void dump(decode_results *results) {
         }
         badgeList[badgePos] = newBadge;
         numBadges++;
-        Serial.println("[*] Adding as new Badge.");
-        Serial.print("[*] List count at:");Serial.println(numBadges);
+        //Serial.println("[*] Adding as new Badge.");
+        //Serial.print("[*] List count at:");Serial.println(numBadges);
         
       }
       else
       {
-       Serial.println("[*]  Already seen this badge.");
+       //Serial.println("[*]  Already seen this badge.");
       }
   
     }

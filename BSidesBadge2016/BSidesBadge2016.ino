@@ -80,8 +80,8 @@ struct WiFiSettings {
 /* Endpoints for badges */
 String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
-//String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
-//String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
+//String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
+//String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
 
 /* Badge Name and Number */
 String badgeName = "";
@@ -175,8 +175,8 @@ bool pong_ball_up = false;
 bool pong_ball_right = true;
 
 
-String badgeVersion = "0.44";
-String badgeGitHash = "9d280c50849a8ec92e1c2766d6f1e8aad44e87b0";
+String badgeVersion = "0.45";
+String badgeGitHash = "6f8d58907096dd2a66f06d04c2525db89583c83f";
 
 /* Helpers */
 #include "general.h" // general functions

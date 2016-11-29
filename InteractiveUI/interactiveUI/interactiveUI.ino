@@ -263,7 +263,7 @@ void AboutFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
  display->drawString(x+10,y+30,"Version:" + badgeVersion);
  display->drawStringMaxWidth(x+10,y+40,128,badgeGitHash);
  display->drawString(x+10,y+50,"@AndrewMohawk");
- display->drawString(x+10,y+60,"@AndrewMohawk");
+ display->drawString(x+10,y+60,"@ElasticNinja");
  
   
 }

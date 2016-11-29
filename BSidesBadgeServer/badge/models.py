@@ -28,6 +28,7 @@ class Badge(models.Model):
 	badge_salt = models.CharField("Badge Salt",max_length=200)
 	badge_team = models.ForeignKey(Team, db_index=True,related_name="team")
 	badge_status = models.CharField("Badge Status",max_length=200,default="noob")
+	badge_badgesSeen = models.ManyToManyField("Badge", blank=True)
 	def normaliseLevel(self):
 		if(self.badge_level <= 0):
 			self.badge_level = 1
@@ -38,8 +39,8 @@ class Badge(models.Model):
 
 class Log(models.Model):
 	log_timestamp = models.DateTimeField("Log TimeStamp", auto_now_add=True)
-	log_badgeOne = models.ForeignKey(Badge,db_index=True,related_name="badgeOne")
-	log_badgeTwo = models.ForeignKey(Badge,db_index=True,null = True,related_name="badgeTwo")
+	log_badgeOne = models.ForeignKey(Badge,related_name="badgeOne")
+	log_badgeTwo = models.ForeignKey(Badge,null = True,related_name="badgeTwo")
 	log_type = models.CharField("Log Type", unique = False, max_length=200)
 	log_description = models.CharField("Description",unique = False, max_length = 500)
 	def __unicode__(self):

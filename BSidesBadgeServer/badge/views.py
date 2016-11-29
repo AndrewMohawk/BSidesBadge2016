@@ -160,7 +160,7 @@ class badgeGetHash(TemplateView):
 	def get(self, request, *args, **kwargs):
 		context = self.get_context_data(**kwargs)
 		badgeID = context["badgeID"]
-		return super(RunnerProcess, self).render_to_response(context)
+		
 		try:
 			thisBadge = Badge.objects.get(badge_id = badgeID)
 			thisBadge.badge_lastseen = datetime.now()
@@ -287,13 +287,14 @@ class badgeCheckin(TemplateView):
 		logEntry = Log(log_timestamp = datetime.now(),log_badgeOne = thisBadge,log_type="Checkin",log_description = logDescrip)
 		#logEntry.save()
 		
-		print self.request.POST.get("seen") + "!!!"
+		
 		for badgeName in seenBadges:
 			try:
 				seenBadge = Badge.objects.get(badge_id = badgeName)
 				self.badgeFight(context["currentBadge"],seenBadge)
 				if settings.DEBUG:
 					print "[+] Badge %s found in seen list!" % (badgeName)
+					thisBadge.badge_badgesSeen.add(seenBadge)
 			except Badge.DoesNotExist:
 				if settings.DEBUG:
 					print "[!] Error! %s has not been seen before! Not saving!" % (badgeName)
