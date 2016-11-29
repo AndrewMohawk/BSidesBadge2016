@@ -85,7 +85,8 @@ byte readShiftByte()
   return 0;
 }
 
-#include "pong.h" // Communications To/From server
+#include "pong.h" // Pong
+#include "warbadging.h" // Pong
 
 void readShift()
 {
@@ -160,9 +161,20 @@ void readShift()
       
       else if(Challenges[currentListedChallenge] == "Pong" || Challenges[currentListedChallenge] == "RetroRom")
       {
-        
         pong_time = millis();
         pong_runPong();
+      }
+      else if(Challenges[currentListedChallenge] == "AndroidFoo" || Challenges[currentListedChallenge] == "Warbadge")
+      {
+        display.clear();
+        display.setTextAlignment(TEXT_ALIGN_LEFT);
+        display.drawString(20,0,">> WarBadging! <<");
+        display.drawString(0,15,"P1_Up - Scan for WiFi");
+        display.drawString(0,25,"P2_UP/Down - Move list");
+        display.drawString(0,35,"P1_Right + P2_Left - Quit.");
+        display.drawString(80,50,"-AM");
+        display.display();
+        wifiScanner_startScanner();
       }
       else if(completedChallenges > 0)
       {

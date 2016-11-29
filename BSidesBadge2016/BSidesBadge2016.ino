@@ -61,6 +61,10 @@ const int pinDataIn = 16; // Data
 unsigned int badgeList[5] = {1234567890,1234567891,1234567892,1234567893,1234567894};
 int numBadges = 0;
 
+/* List of last 5 seen badges and the amount we have seen since last update */
+unsigned int badgeSpeakerList[5] = {1234567890,1234567891,1234567892,1234567893,1234567894};
+int numSpeakerBadges = 0;
+
 /* Our HTTP client */
 HTTPClient http;
 
@@ -174,6 +178,14 @@ int pong_speed_multiplyer = 1.2;
 bool pong_ball_up = false;
 bool pong_ball_right = true;
 
+
+/* Warbadging Stuff */
+String wifiScanner_networks[30] = {};
+int wifiScanner_currentTop = 0;
+int wifiScanner_numNetworksShown = 5;
+int wifiScanner_networksFound = 0;
+int wifiScanner_networksScreen_y = 10;
+boolean wifiScanner_scanfornetworks = false;
 
 String badgeVersion = "0.45";
 String badgeGitHash = "6f8d58907096dd2a66f06d04c2525db89583c83f";

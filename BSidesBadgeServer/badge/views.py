@@ -20,6 +20,8 @@ from Crypto import Random
 from django.utils.crypto import get_random_string
 from datetime import datetime
 
+from django.db.models.fields.related import ManyToManyField
+
 BS = 16
 pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS) 
 unpad = lambda s : s[:-ord(s[len(s)-1:])]
@@ -154,6 +156,93 @@ class badgeAddAlias(FormView):
 		
 		return super(badgeAddAlias, self).render_to_response(context)
 		#return HttpResponse(context)
+
+class getBadgeDetails(TemplateView):
+	template_name = "api_badgeDetails"
+	
+	
+
+	def to_dict(self,instance):
+		opts = instance._meta
+		data = {}
+		for f in opts.concrete_fields + opts.many_to_many:
+			if isinstance(f, ManyToManyField):
+				print "Found Many to Many %s" % f
+				if instance.pk is None:
+					data[f.name] = []
+				else:
+					
+					if(str(f) == "badge.Badge.badge_badgesSeen"):
+						#print f.value_from_object(instance).values_list('badge_id', flat=True)
+						data[f.name] = list(f.value_from_object(instance).values_list('badge_id', flat=True))
+					#elif(str(f) == "badge.Badge.badge_challenges"):
+					#	data[f.name] = list(f.value_from_object(instance).values_list('challenge_id', flat=True))
+					else:
+						#print "no.";
+						data[f.name] = list(f.value_from_object(instance).values_list('pk', flat=True))
+			else:
+				data[f.name] = f.value_from_object(instance)
+		return data
+	
+	
+	def get(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badgeID = context["badgeID"]
+		
+		try:
+			thisBadge = Badge.objects.get(badge_id = badgeID)		
+			if settings.DEBUG:
+				print "[+] Badge %s Found!" % (badgeID)
+			#data = serializers.serialize("json", [thisBadge,])
+			#context["json"] = data
+			
+			
+			my_dict = self.to_dict(thisBadge)
+			print my_dict
+			
+		except Badge.DoesNotExist:
+			if settings.DEBUG:
+				print "[!] Could not find badge %s -- not giving hash!" % (badgeID)
+			return HttpResponse("noyouarenotarealbadge")
+		
+		return JsonResponse(  my_dict )
+
+
+class getAllBadges(TemplateView):
+	template_name = "api_badgeDetails"
+	
+	def to_dict(self,instance):
+		opts = instance._meta
+		data = {}
+		for f in opts.concrete_fields + opts.many_to_many:
+			if isinstance(f, ManyToManyField):
+				print "Found Many to Many %s" % f
+				if instance.pk is None:
+					data[f.name] = []
+				else:
+					
+					if(str(f) == "badge.Badge.badge_badgesSeen"):
+						#print f.value_from_object(instance).values_list('badge_id', flat=True)
+						data[f.name] = list(f.value_from_object(instance).values_list('badge_id', flat=True))
+					#elif(str(f) == "badge.Badge.badge_challenges"):
+					#	data[f.name] = list(f.value_from_object(instance).values_list('challenge_id', flat=True))
+					else:
+						#print "no.";
+						data[f.name] = list(f.value_from_object(instance).values_list('pk', flat=True))
+			else:
+				data[f.name] = f.value_from_object(instance)
+		return data
+	
+	def get(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badges = Badge.objects.all()
+		badgeDict = []
+		for badge in badges:
+			#badgeDict.append({"tesT":"test"})
+			badgeDict.append(self.to_dict(badge))
+		#data = serializers.serialize("json", Badge.objects.all())
+		
+		return JsonResponse(  badgeDict, safe=False )
 
 class badgeGetHash(TemplateView):
 	template_name = "checkin.enc"
