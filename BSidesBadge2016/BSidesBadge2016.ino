@@ -82,10 +82,10 @@ struct WiFiSettings {
 
 
 /* Endpoints for badges */
-String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
-String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
-//String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
-//String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
+//String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
+//String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
+String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
+String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
 
 /* Badge Name and Number */
 String badgeName = "";
@@ -187,8 +187,8 @@ int wifiScanner_networksFound = 0;
 int wifiScanner_networksScreen_y = 10;
 boolean wifiScanner_scanfornetworks = false;
 
-String badgeVersion = "0.45";
-String badgeGitHash = "6f8d58907096dd2a66f06d04c2525db89583c83f";
+String badgeVersion = "0.49";
+String badgeGitHash = "8514b7de59f6835b4b3ab465eb8513b0f141ab1a";
 
 /* Helpers */
 #include "general.h" // general functions
@@ -404,10 +404,11 @@ void loop() {
       {
           display.displayOn();
           display.clear();
-          display.drawXbm(0, 16, smallerpanda_width, smallerpanda_height, smallerpanda_bits);
-          display.setTextAlignment(TEXT_ALIGN_LEFT);
-          display.drawString(70,30,"Alias:");
-          display.drawString(70,40,alias);
+          display.setTextAlignment(TEXT_ALIGN_CENTER);
+          
+          display.drawString(70,0,alias);
+          display.drawXbm(30, 16, smallerpanda_width, smallerpanda_height, smallerpanda_bits);
+          
           
           display.display();
           lowPowerMode = true;

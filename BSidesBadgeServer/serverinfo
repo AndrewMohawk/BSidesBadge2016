@@ -1,0 +1,25 @@
+Mysql Create User
+=================
+
+CREATE DATABASE BSidesBadges2016;
+CREATE USER 'bsidesbadge2016'@'localhost' IDENTIFIED BY 'dieinafire';
+GRANT ALL PRIVILEGES ON BSidesBadges2016.* TO 'bsidesbadge2016'@'localhost';
+FLUSH PRIVILEGES;
+
+INSTALL
+========
+pip install django
+pip install django-bootstrap-form
+sudo apt-get install libmysqlclient-dev
+pip install mysql-python
+pip install pycrypto
+
+CRONTAB
+========
+* * * * */5 curl http://localhost:8000/badge/saveGameState/
+
+RUN
+=========
+cd BSidesBadge2016/BSidesBadgeServer
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000

@@ -46,3 +46,11 @@ class Log(models.Model):
 	def __unicode__(self):
 		return u'Log [ %s ___ %s]' % ( self.log_timestamp, self.log_description )
 		#return u'Log [ %s %s -- (%s && %s) : %s]' % (self.log_timestamp,self.log_type,self.log_badgeOne,self.log_badgeTwo,self.log_description)
+
+class gameStatus(models.Model):
+	gamestatus_timestamp = models.DateTimeField("Log TimeStamp", auto_now_add=True)
+	gamestatus_red = models.IntegerField("Number of Red Players");
+	gamestatus_green = models.IntegerField("Number of Green Players");
+	gamestatus_blue = models.IntegerField("Number of Blue Players");
+	def __unicode__(self):
+		return u'Status [ %s (Total: %s) ___ Red:%s Green:%s Blue:%s]' % ( self.gamestatus_timestamp, (self.gamestatus_blue + self.gamestatus_green + self.gamestatus_red), self.gamestatus_red, self.gamestatus_green, self.gamestatus_blue )

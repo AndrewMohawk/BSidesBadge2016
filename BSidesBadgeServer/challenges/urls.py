@@ -17,18 +17,12 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic import TemplateView
 #from badge import views
-from badge.views import badgeCheckin,badgeGetHash, badgeAddAlias, badgeAddChallenge, getBadgeDetails, getAllBadges, saveCurrentTeamStandings
+from challenges.views import challengeDashboard, challengeAjax
 
 from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
-    url(r'checkin/(?P<badgeID>[A-Za-z0-9]+)/$', csrf_exempt(badgeCheckin.as_view()), name='checkin'),
-    url(r'gethash/(?P<badgeID>[A-Za-z0-9]+)/$', csrf_exempt(badgeGetHash.as_view()), name='gethash'),
-    url(r'addalias/$', badgeAddAlias.as_view(), name='addalias'),
-    url(r'addhash/$', badgeAddChallenge.as_view(), name='addhash'),
-    url(r'badgeDetails/(?P<badgeID>[A-Za-z0-9]+)/$', getBadgeDetails.as_view(), name='badgeDetails'),
-    url(r'listBadges/$', getAllBadges.as_view(), name='badgeDetails'),
-    url(r'saveGameState/$', saveCurrentTeamStandings.as_view(), name='saveCurrentTeamStandings'),
-    #url(r'workbench/(?P<badgeID>[0-9]+)$', badgeGetHash.as_view(), name='workbench'),
+    #url(r'ajax/$', csrf_exempt(challengeAjax.as_view()), name='ajax'),
+    url(r'^', views.challengeDashboard.as_view(), name='dashboard'),
     
 ]

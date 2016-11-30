@@ -208,6 +208,18 @@ class getBadgeDetails(TemplateView):
 		return JsonResponse(  my_dict )
 
 
+class saveCurrentTeamStandings(TemplateView):
+	def get(self, request, *args, **kwargs):
+		template_name = "api_badgeDetails"
+		blueBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='blue'))
+		greenBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='green'))
+		redBadges = Badge.objects.filter(badge_team=Team.objects.get(team_name='red'))
+
+		currentStatus = gameStatus.objects.create(gamestatus_timestamp = datetime.now(),gamestatus_red = len(redBadges),gamestatus_blue = len(blueBadges),gamestatus_green = len(greenBadges));
+		print currentStatus;
+		currentStatus.save();
+		return JsonResponse(  {"status" :"saved"} )
+
 class getAllBadges(TemplateView):
 	template_name = "api_badgeDetails"
 	

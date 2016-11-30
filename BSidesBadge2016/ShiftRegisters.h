@@ -294,6 +294,15 @@ if(lastButtons == "LRLRLRLRLR")
   }
   lastButtons = "";
 }
+
+if(lastButtons == "ULDRBACDUU")
+{
+  if(addChallenge("Warbadge"))
+  {
+    playNinja();
+  }
+  lastButtons = "";
+}
   
   
   
