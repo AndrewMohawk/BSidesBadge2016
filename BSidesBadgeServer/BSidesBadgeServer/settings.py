@@ -83,12 +83,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'BSidesBadges2016',
-        #'USER': 'root',
-        #'PASSWORD': 'root',
-        #'HOST': '127.0.0.1',
-        'USER': 'bsidesbadge2016',
-        'PASSWORD': 'dieinafire',
-        'HOST':'localhost'
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': '127.0.0.1',
+        #'USER': 'bsidesbadge2016',
+        #'PASSWORD': 'dieinafire',
+        #'HOST':'localhost'
         
     }
     #'default': {
