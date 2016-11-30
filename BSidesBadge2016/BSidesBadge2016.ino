@@ -82,10 +82,10 @@ struct WiFiSettings {
 
 
 /* Endpoints for badges */
-//String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
-//String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
-String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
-String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
+String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
+String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
+//String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
+//String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
 
 /* Badge Name and Number */
 String badgeName = "";
