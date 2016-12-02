@@ -43,7 +43,7 @@ OLEDDisplayUi ui     ( &display );
 Timer t;                               //instantiate the timer object
 
 unsigned long lastAction = 0;
-unsigned long lastActionTimeout = 30000;
+unsigned long lastActionTimeout = 300000;
 
 
 
@@ -153,6 +153,44 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->drawString(128, 0, team);
   
 }
+
+int rpssl_current = 0;
+int rpssl_mode = 0;
+String rpspl_str[] = {"Rock","Paper","Scissors","Spock","Lizard"};
+
+boolean aliasSet = true;
+void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) 
+{
+  
+  
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    display->drawString(x+50,y+16,"ROCK. PAPER. ");
+    display->drawString(x+50,y+26,"   SCISSORS.  ");
+    display->drawString(x+50,y+36,"SPOCK. LIZARD");
+    if(aliasSet == false)
+    {
+      display->drawString(x+25,y+50,"Set Alias to Unlock");
+      
+    }
+    else
+    {
+      display->drawXbm(x+80, y+52, uparrow_width, uparrow_height, uparrow_bits);
+      display->drawString(x+95,y+49,"= Start");  
+    }
+    
+  
+  
+
+    display->drawXbm(x+0, y+16, spock_width, spock_height, spock_bits);
+  
+ 
+  
+  
+  
+ 
+}
+
+/*
 void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -167,6 +205,7 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
     display->drawStringMaxWidth(0 + x, 13 + y, 128,currentSpeaker);
   }
 }
+*/
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
@@ -222,6 +261,8 @@ void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   //qrcode.create("http://www.andrewmohawk.com/");
 }
 
+String badgeVersion = "0.49";
+String badgeGitHash = "8514b7de59f6835b4b3ab465eb8513b0f141ab1a";
 
 String Challenges[10];
 
@@ -270,7 +311,7 @@ void AboutFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { AboutFrame,drawFrame1, drawFrame2, drawFrame3, ChallengeFrame };
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, ChallengeFrame,AboutFrame };
 
 // how many frames are there?
 int frameCount = 5;
@@ -548,11 +589,11 @@ void readShift()
     {
       if(Challenges[currentListedChallenge] == "Konami")
       {
-        konamiCode();
+        //konamiCode();
       }
       else if(Challenges[currentListedChallenge] == "Alias")
       {
-        playAlias();
+        //playAlias();
       }
     }
     Serial.println(ESP.getFreeHeap());
@@ -560,6 +601,19 @@ void readShift()
   }
   else if(buttonVals & (1 << P2_Left))
   {
+    if (currentFrame == 0)
+    {
+      if(rpssl_current > 0)
+      {
+        rpssl_current--;
+      }
+      else if(rpssl_current == 0)
+      {
+        rpssl_current = 4;
+      }
+    }
+
+
     
     thisBut = "A";
     lowPowerMode = false;
@@ -604,6 +658,19 @@ void readShift()
   }
   else if(buttonVals & (1 << P2_Right))
   {
+    if (currentFrame == 0)
+    {
+      if(rpssl_current < 5)
+      {
+        rpssl_current++;
+      }
+      else if(rpssl_current == 5)
+      {
+        rpssl_current = 0;
+      }
+    }
+
+    
     thisBut = "D";
     darkness();
     display.displayOn();
@@ -697,33 +764,6 @@ boolean addChallenge(String c_name)
   }
 }
 
-void konamiCode(delaySpeed = 100)
-{
-  //Serial.println("[+] KONAMI CODE!");
-  int y = 0;
-  for (int16_t x=0; x<DISPLAY_WIDTH; x+=4) {
-    display.clear();
-    y = random(0,15);
-    display.drawXbm(x, y, skeleton_width, skeleton_height, skeleton_bits);
-    display.display();
-    delay(delaySpeed);
-  }
-}
-
-void playAlias()
-{
-  Serial.println("[+] Play Alias!");
-  int x = 0;
-  display.setFont(ArialMT_Plain_16);
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  for (int16_t y=0; y<DISPLAY_HEIGHT; y+=2) {
-    display.clear();
-    x = random(0,DISPLAY_WIDTH/2);
-    display.drawString(x, y, alias);
-    display.display();
-    delay(100);
-  }
-}
 
 void playNinja()
 {

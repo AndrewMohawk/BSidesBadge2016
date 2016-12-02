@@ -53,6 +53,7 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
   Serial.println(WiFi.localIP());
   Serial.print("Badge Number: ");
   Serial.println(badgeName);
+  alias = badgeName;
   updating = false;
   return true;
 }
@@ -156,3 +157,4 @@ void initWiFi(boolean boot = false)
   }
   updating = false;
 }
+

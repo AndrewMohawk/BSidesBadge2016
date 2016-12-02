@@ -71,8 +71,6 @@ HTTPClient http;
 /* Default WiFi SSID details */
 char defaultSSID[32]     = "highway";
 char defaultPassword[32] = "dangerzone";
-//char defaultSSID[32]     = "AndrewMohawkGlobal";
-//char defaultPassword[32] = "0126672737";
 
 /* WiFi struct for EEPROM */
 struct WiFiSettings {
@@ -84,9 +82,13 @@ struct WiFiSettings {
 /* Endpoints for badges */
 String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
-//String hashEndPoint = "http://10.85.0.243:8000/badge/gethash/";
-//String checkInEndPoint = "http://10.85.0.243:8000/badge/checkin/";
+String blankEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/";
 
+/*
+String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
+String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
+String blankEndPoint = "http://10.85.0.241:8000/badge/";
+*/
 /* Badge Name and Number */
 String badgeName = "";
 unsigned int badgeNumber;
@@ -97,7 +99,7 @@ unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 150;  
 
 unsigned long lastAction = 0;
-unsigned long lastActionTimeout = 300000; //Go to panda in 5 minutes.
+unsigned long lastActionTimeout = 3000000; //Go to panda in 5 minutes.
 
 bool lowPowerMode = false;
 byte currentShiftOut = 0;
@@ -115,6 +117,7 @@ unsigned long currTime = 0;
 String team = "None!";
 String alias = "No Alias";
 String badgeVerifyCode = "NoCode";
+String  badge_status = "noob";
 int level = 1;
 
 
@@ -140,7 +143,7 @@ PROGMEM const char string_6[]      = "          12h00-13h00:       Lunch";
 PROGMEM const char string_7[]      = "          13h00-13h45:       Charl van der Walt: Love triangles in cyberspace. A tale about trust in 5 chapters";
 PROGMEM const char string_8[]      = "          13h45-14h30:       Robert Len: (In)Outsider Trading - Hacking stocks using public information";
 PROGMEM const char string_9[]      = "          14h30-15h00:       Coffee Break";
-PROGMEM const char string_10[]     = "          15h00-15h45:       Ion Todd: Password Securit for humans";
+PROGMEM const char string_10[]     = "          15h00-15h45:       Ion Todd: Password Security for humans";
 PROGMEM const char string_11[]     = "          15h45-16h15:       Thomas Underhay & Darryn Cull: SensePost XRDP Tool";
 PROGMEM const char string_12[]     = "          16h15-16h30:       Michael Rodger: Opening the Black Box – Software Security from a Hardware Perspective";
 PROGMEM const char string_13[]     = "          16h45-17h00:       Closing";
@@ -178,6 +181,24 @@ int pong_speed_multiplyer = 1.2;
 bool pong_ball_up = false;
 bool pong_ball_right = true;
 
+/* RPSSL Stuff */
+boolean aliasSet = false;
+int rpssl_current = 0;
+int rpssl_mode = 0;
+boolean rpssl_updateScreen = true;
+String rpspl_str[] = {"Rock","Paper","Scissors","Spock","Lizard"};
+unsigned int rpssl_challenger_badge = 0;
+unsigned int rpssl_badgeList[4];
+unsigned int rpssl_irsendLastTime = 0;
+unsigned int rpssl_irsendDelayTime = 300;
+int rpssl_badgelist_id = 0;
+int rpssl_badgelist_max = 4;
+int rpssl_badgelist_selected = 0;
+int rpssl_badgelist_num = 0;
+int rpssl_my_selection = -1;
+String rpssl_statusmsg = "";
+bool startRPSSL = false;
+
 
 /* Warbadging Stuff */
 String wifiScanner_networks[30] = {};
@@ -191,26 +212,20 @@ String badgeVersion = "0.49";
 String badgeGitHash = "8514b7de59f6835b4b3ab465eb8513b0f141ab1a";
 
 /* Helpers */
+
 #include "general.h" // general functions
 #include "screen.h" // Screen drawing functions
 
 #include "ShiftRegisters.h" // input/output registers
-
 #include "WiFi.h" // WiFi connections
+
 #include "communication.h" // Communications To/From server
+#include "rpssl.h" // Rock,Paper,Scissors,Spock,Lizard
 
 
 
 
 
-FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame,AboutFrame};
-
-// how many frames are there?
-int frameCount = 5;
-
-// Overlays are statically drawn on top of a frame eg. a clock
-OverlayCallback overlays[] = { msOverlay };
-int overlaysCount = 1;
 
 
 
@@ -349,14 +364,6 @@ pinMode(pinStcp, OUTPUT);
 
 
 
-
-
-
-
-
-
-
-
 void loop() {
   
   int remainingTimeBudget = 0;
@@ -372,7 +379,16 @@ void loop() {
   }
 
 
-  if (remainingTimeBudget > 0 || lowPowerMode == true) {
+  if (remainingTimeBudget > 0 || lowPowerMode == true) 
+  {
+    //Day before coding. Kthnx.
+    if (startRPSSL == true)
+    {
+      startRPSSL = false;
+      rpssl_updateScreen = true;
+      rpssl_badgelist_num = 0;
+      rpssl_main();
+    }
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
@@ -444,5 +460,5 @@ void loop() {
   }
   
  
-  
+  delay(1);
 }

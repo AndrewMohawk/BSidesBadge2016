@@ -86,7 +86,8 @@ byte readShiftByte()
 }
 
 #include "pong.h" // Pong
-#include "warbadging.h" // Pong
+#include "warbadging.h" // WarBadging
+
 
 void readShift()
 {
@@ -131,6 +132,7 @@ void readShift()
   }
   else if(buttonVals & (1 << P1_Top))
   {
+    
     thisBut = "U";
     lowPowerMode = false;
     display.displayOn();
@@ -148,9 +150,16 @@ void readShift()
     thisBut = "B";
     lowPowerMode = false;
     display.displayOn();
+    if(currentFrame == 4)
+    {
+      if(aliasSet == true)
+      {
+        startRPSSL = true;
+      }
+    }
     if (currentFrame == 3)
     {
-      if(Challenges[currentListedChallenge] == "Konami")
+      if(Challenges[currentListedChallenge] == "Skeleton" || Challenges[currentListedChallenge] == "HappyCorp")
       {
         konamiCode();
       }
@@ -164,7 +173,7 @@ void readShift()
         pong_time = millis();
         pong_runPong();
       }
-      else if(Challenges[currentListedChallenge] == "AndroidFoo" || Challenges[currentListedChallenge] == "Warbadge")
+      else if(Challenges[currentListedChallenge] == "SecretSquirrel" || Challenges[currentListedChallenge] == "Warbadge")
       {
         display.clear();
         display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -274,9 +283,28 @@ if (thisBut != "")
     lastButtons = lastButtons.substring(1);
   }
 }
-//Serial.println(lastButtons + "!");
-if(lastButtons == "UUDDLRLRAB")
+
+if(lastButtons.substring(0,8) == "UUDDLRLR" || lastButtons.substring(1,9) == "UUDDLRLR" || lastButtons.substring(2,10) == "UUDDLRLR")
 {
+  //because singe hates konami.
+  playNinja();
+
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawString(20,0,">> Secret Message! <<");
+  display.drawString(20,15,"There's a wifi");
+  display.drawString(20,25,"net you can't");
+  display.drawString(20,35,"see. It's hidden");
+  display.drawString(20,45,"not easy.@JP_14c");
+  display.display();
+  delay(6000);
+  lastButtons = "";
+}
+
+
+/*if(lastButtons == "UUDDLRLRAB")
+{
+  
   if(addChallenge("Konami"))
   {
     playNinja();
@@ -285,7 +313,7 @@ if(lastButtons == "UUDDLRLRAB")
   }
   lastButtons = "";
 }
-
+*/
 if(lastButtons == "LRLRLRLRLR")
 {
   if(addChallenge("Pong"))
@@ -303,9 +331,19 @@ if(lastButtons == "ULDRBACDUU")
   }
   lastButtons = "";
 }
+if(lastButtons == "BDCARDLUCC")
+{
+  if(addChallenge("Skeleton"))
+  {
+    playNinja();
+  }
+  lastButtons = "";
+}
+
   
   
   
 
 
 }
+

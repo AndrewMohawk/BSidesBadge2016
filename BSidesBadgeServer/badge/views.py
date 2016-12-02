@@ -19,7 +19,7 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from django.utils.crypto import get_random_string
 from datetime import datetime
-
+from django.forms.models import model_to_dict
 from django.db.models.fields.related import ManyToManyField
 
 BS = 16
@@ -51,8 +51,182 @@ class AESCipher:
 		return unpad(cipher.decrypt( enc[16:] ))
 
 
-		
+def cryptMessage(message,key):
+		encodedMessage = ""
+		shiftLen = len(key)
+		#print "!!!%s!!" % (message)
+		for x in message:
+			encodedMessage = encodedMessage +  chr(ord(x) - shiftLen)
+		return encodedMessage	
 
+
+
+
+class RPSSL_api(TemplateView):
+	template_name = "api_badgeDetails"
+	
+
+	#def get(self, request, *args, **kwargs):
+	#	return self.post(request, args, kwargs)
+		
+	def post(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		badgeID = context["badgeID"]
+		challengerBadgeID = context["challengerBadge"]
+		selection = int(context["selection"])
+		try:
+			
+			thisBadge = Badge.objects.get(badge_id = badgeID)
+			if(thisBadge):
+				print thisBadge
+			challengerBadge = Badge.objects.get(badge_id = challengerBadgeID)
+			
+			thisGame = None
+			#if settings.DEBUG:
+				#print "[+] Badge %s Found!" % (thisBadge)
+				#print "[+] Challenger Badge %s Found!" % (challengerBadge)
+			try:
+				P1Game = RPSSL.objects.get(rpssl_badgeOne = thisBadge,rpssl_badgeTwo = challengerBadge,rpssl_badgesConfirmed__lt=2)
+				print "[+] We know this game: %s" % (P1Game)
+				P1Game.rpssl_badgesConfirmed = 1
+				if(P1Game.rpssl_status == 1 or P1Game.rpssl_status == 2):
+					P1Game.rpssl_badgesConfirmed = 2
+				if(P1Game.rpssl_status == 0):
+					#check it hasnt expired
+					timediff = datetime.now() - P1Game.rpssl_timestamp
+					secondsSince = timediff.seconds
+					print "[+] This game started %s seconds ago" % (secondsSince)
+					if(secondsSince > 45):
+						#this games timed out.
+						print "[!!] Timing out game!"
+						P1Game.rpssl_status = 3
+				P1Game.save()
+				thisGame = P1Game
+				#return JsonResponse(model_to_dict(P1Game))
+				
+			except (RPSSL.DoesNotExist):
+				try:
+					P2Game = RPSSL.objects.get(rpssl_badgeTwo = thisBadge,rpssl_badgeOne = challengerBadge,rpssl_badgesConfirmed__lt=2)
+					P2Game.rpssl_pick2 = selection
+					
+					print "[+] Complete this game: %s" % (P2Game)
+					
+					'''
+					0: rock
+					1: paper
+					2: scissors
+					3: spock
+					4: lizard
+					'''
+					p1 = P2Game.rpssl_pick1
+					p2 = P2Game.rpssl_pick2
+					
+					if(p1 == 0): #rock
+						if(p2 == 2 or p2 == 4): #scissors or lizard
+							P2Game.rpssl_status = 1 #p1 wins
+						elif(p2 == 0):
+							P2Game.rpssl_status = 3 #draw
+						else:
+							P2Game.rpssl_status = 2 #p2 wins
+							
+					elif(p1 == 1): #paper
+						if(p2 == 0 or p2 == 3): #rock or spock
+							P2Game.rpssl_status = 1 #p1 wins
+						elif(p2 == 1):
+							P2Game.rpssl_status = 3 #draw
+						else:
+							P2Game.rpssl_status = 2 #p2 wins
+					
+					elif(p1 == 2): #scissors
+						if(p2 == 1 or p2 == 4): #lizard or paper
+							P2Game.rpssl_status = 1 #p1 wins
+						elif(p2 == 2):
+							P2Game.rpssl_status = 3 #draw
+						else:
+							P2Game.rpssl_status = 2 #p2 wins
+					
+					elif(p1 == 3): #spock
+						if(p2 == 0 or p2 == 2): #rock or scissors
+							P2Game.rpssl_status = 1 #p1 wins
+						elif(p2 == 3):
+							P2Game.rpssl_status = 3 #draw	
+						else:
+							P2Game.rpssl_status = 2 #p2 wins
+					
+					elif(p1 == 4): #lizard
+						if(p2 == 1 or p2 == 3): #paper or spock
+							P2Game.rpssl_status = 1 #p1 wins
+						elif(p2 == 4):
+							P2Game.rpssl_status = 3 #draw
+						else:
+							P2Game.rpssl_status = 2 #p2 wins
+					
+					#rpssl_badgesConfirmed = 2;
+					P2Game.save();
+					thisGame = P2Game
+					#return JsonResponse(model_to_dict(P2Game))
+				except (RPSSL.DoesNotExist):
+					
+					x = RPSSL.objects.create(rpssl_badgeOne = thisBadge,rpssl_badgeTwo = challengerBadge,rpssl_status = 0,rpssl_pick1 = selection,rpssl_badgesConfirmed = 1)
+					print "[+] Created this game: %s" % (x)
+					#return JsonResponse(model_to_dict(x))
+					thisGame = x
+			
+		except Badge.DoesNotExist:
+			if settings.DEBUG:
+				print "[!] Could not find badge %s AND/OR %s!" % (badgeID, challengerBadgeID)
+		
+		##lets do the return
+		try:
+			jsonObj = {}
+			if(thisGame.rpssl_status == 0):
+				jsonObj["statusMSG"] = "Awaiting Results...";
+				jsonObj["state"] = 0
+			if(thisGame.rpssl_status == 1 ):
+				jsonObj["state"] = 1
+				if(thisBadge == thisGame.rpssl_badgeOne):
+					jsonObj["status1"] = "YOU WIN"
+					jsonObj["status2"] = thisGame.rpssl_badgeOne.badge_nick
+					jsonObj["status3"] = "LOSES!"
+				else:
+					jsonObj["status1"] = "YOU LOSE"
+					jsonObj["status2"] = thisGame.rpssl_badgeTwo.badge_nick
+					jsonObj["status3"] = "WINS!"
+			if(thisGame.rpssl_status == 2 ):
+				jsonObj["state"] = 1
+				if(thisBadge == thisGame.rpssl_badgeTwo):
+					jsonObj["status1"] = "YOU WIN"
+					jsonObj["status2"] = thisGame.rpssl_badgeOne.badge_nick
+					jsonObj["status3"] = "LOSES!"
+				else:
+					jsonObj["status1"] = "YOU LOSE"
+					jsonObj["status2"] = thisGame.rpssl_badgeTwo.badge_nick
+					jsonObj["status3"] = "WINS!"
+			if(thisGame.rpssl_status == 3 ):
+				jsonObj["state"] = 1
+				if(thisBadge == thisGame.rpssl_badgeTwo):
+					jsonObj["status1"] = "YOU DRAW WITH"
+					jsonObj["status2"] = thisGame.rpssl_badgeOne.badge_nick
+					jsonObj["status3"] = ""
+				else:
+					jsonObj["status1"] = "YOU DRAW WITH"
+					jsonObj["status2"] = thisGame.rpssl_badgeTwo.badge_nick
+					jsonObj["status3"] = ""
+					
+			if(thisGame.rpssl_status == 4 ):
+				jsonObj["state"] = 2
+				jsonObj["status1"] = ":( Timed out."
+			
+			unencrypted = json.dumps(jsonObj)
+			#print unencrypted
+			crypted = cryptMessage(unencrypted,thisBadge.badge_salt)
+			
+			
+			return HttpResponse(crypted)
+		except Exception,e:
+			unencrypted = json.dumps({"state":3,"status1":"Server Error"})
+			crypted = cryptMessage(unencrypted,thisBadge.badge_salt)
+			return HttpResponse(crypted)
 
 class badgeAddChallenge(FormView):
 	template_name = "addChallenge.html"
@@ -156,6 +330,9 @@ class badgeAddAlias(FormView):
 		
 		return super(badgeAddAlias, self).render_to_response(context)
 		#return HttpResponse(context)
+
+
+
 
 class getBadgeDetails(TemplateView):
 	template_name = "api_badgeDetails"
@@ -417,13 +594,7 @@ class badgeCheckin(TemplateView):
 		return HttpResponse(context["jsonResponse"])
 
 
-	def cryptMessage(self,message,key):
-		encodedMessage = ""
-		shiftLen = len(key)
-		#print "!!!%s!!" % (message)
-		for x in message:
-			encodedMessage = encodedMessage +  chr(ord(x) - shiftLen)
-		return encodedMessage
+	
 
 	def get_context_data(self, **kwargs):
 		context = super(badgeCheckin, self).get_context_data(**kwargs)
@@ -456,7 +627,7 @@ class badgeCheckin(TemplateView):
 				else:
 					selectList = [Team.objects.get(team_name='green'),Team.objects.get(team_name='blue')]
 			randomCode = get_random_string(length=6)
-			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = badgeID,badge_salt = "Andrew",badge_team = random.choice(selectList),badge_verify = randomCode)
+			thisBadge = Badge.objects.create(badge_id = badgeID,badge_level = 1,badge_nick = badgeID,badge_salt = "Andrew",badge_team = random.choice(selectList),badge_verify = randomCode,badge_message="WELCOME TO         BSIDES!")
 			thisBadge.save()
 
 		
@@ -482,6 +653,10 @@ class badgeCheckin(TemplateView):
 		
 		jsonResponse["shift"] = shiftVal
 		jsonResponse["status"] = thisBadge.badge_status
+		jsonResponse["message"] = thisBadge.badge_message
+		if(thisBadge.badge_message != ""):
+			thisBadge.badge_message = ""
+			thisBadge.save()
 		jsonResponse["level"] = thisBadge.badge_level
 		jsonResponse["team"] = thisBadge.badge_team.team_name
 		jsonResponse["verify"] = thisBadge.badge_verify
@@ -499,7 +674,7 @@ class badgeCheckin(TemplateView):
 		
 		unencrypted = json.dumps(jsonResponse)
 		#print unencrypted
-		crypted = self.cryptMessage(unencrypted,thisBadge.badge_salt)
+		crypted = cryptMessage(unencrypted,thisBadge.badge_salt)
 		context["jsonResponse"] = crypted
 		
 		

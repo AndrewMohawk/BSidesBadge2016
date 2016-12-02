@@ -136,13 +136,54 @@ void fetchStatus()
     display.drawString(65,42,"Updating...");
     display.display();
     }
-    //String statusmsg          = root["statusmsg"];
+    String badge_message = root["message"].asString();
+    if(badge_message != "")
+    {
+        display.clear();
+        display.setTextAlignment(TEXT_ALIGN_LEFT);
+        if(badge_message.length() > 30)
+        {
+          
+          display.drawString(30,20,badge_message.substring(0,15));
+          display.drawString(30,30,badge_message.substring(15,30));
+          display.drawString(30,40,badge_message.substring(30));
+        }
+        else if(badge_message.length() > 15)
+        {
+          display.drawString(30,20,badge_message.substring(0,15));
+          display.drawString(30,30,badge_message.substring(15));
+          //display.drawString(10,30,badge_message.substring(0,15));
+        }
+        else
+        {
+            
+            display.drawString(30,30,badge_message);
+            
+        }
+        display.display();
+      
+        display.invertDisplay();
+        delay(300);
+        display.normalDisplay();
+        delay(300);
+        display.invertDisplay();
+        delay(300);
+        display.normalDisplay();
+        delay(300);
+        display.invertDisplay();
+        delay(300);
+        display.normalDisplay(); 
+        
+        delay(10000);
+    }
+    badge_status = root["status"].asString();
     level = root["level"];
     team = root["team"].asString();
     String tmpalias = root["alias"].asString();
     if(alias != tmpalias)
     {
       alias = tmpalias;
+      aliasSet = true;
     }
     badgeVerifyCode = root["verify"].asString();
     
@@ -208,6 +249,10 @@ void transmitBadge()
     
     //Serial.println(badgeNumber,HEX);
     irsend.sendSony(badgeNumber, 32);
+    if(badge_status != "noob")
+      {
+        irsend.sendRC6(badgeNumber, 32);
+      }
   }
 }
 
@@ -220,6 +265,41 @@ void dump(decode_results *results) {
   //Serial.println(newBadge,HEX);
 
   int count = results->rawlen;
+  if (results->decode_type == RC6) 
+  {
+    
+    if(results->bits == 32)
+    {
+      if(badge_status == "noob")
+      {
+        if (random(1,10) == 1)
+        {
+          display.clear();
+          display.setTextAlignment(TEXT_ALIGN_CENTER);
+          display.drawString(30,20,"ITS A VIP!");
+          display.drawString(30,30,"OMW! A VIP!");
+          display.drawString(30,40,"MAYBE ITS A SPEAKER!");
+        
+          display.display();
+        
+          display.invertDisplay();
+          delay(300);
+          display.normalDisplay();
+          delay(300);
+          display.invertDisplay();
+          delay(300);
+          display.normalDisplay();
+          delay(300);
+          display.invertDisplay();
+          delay(300);
+          display.normalDisplay(); 
+          display.setTextAlignment(TEXT_ALIGN_LEFT);
+          
+        }
+      }
+    }
+  }
+
   
   if (results->decode_type == SONY) 
   {

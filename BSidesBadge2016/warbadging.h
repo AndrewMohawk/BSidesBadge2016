@@ -1,7 +1,5 @@
 
 
-
-
 String encryptionTypeStr(uint8_t authmode) {
     switch(authmode) {
         case ENC_TYPE_NONE:
@@ -219,3 +217,4 @@ void wifiScanner_startScanner()
   
   
 }
+

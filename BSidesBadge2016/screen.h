@@ -1,3 +1,4 @@
+
 /*
  * Draw a progress bar on the screen
  */
@@ -37,18 +38,65 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     display->drawXbm(8, 0, emptyheart_width, emptyheart_height, emptyheart_bits);
   }
   
+  int spacex = 87;
   
+  if(team.length() == 4)
+  {
+    spacex = 92;
+  }
+  if(team.length() == 3)
+  {
+    spacex = 95;
+  }
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(53, 0, alias);
-
-
-  display->drawXbm(87, 0, space_width, space_height, space_bits);
+  if(alias.length() > 9 + (5-team.length()))
+  {
+   display->drawString(58, 0, alias.substring(0,9 + (5-team.length())) + "..."); 
+  }
+  else
+  {
+    display->drawString(55, 0, alias);
+  }
+  
+  
+  display->drawXbm(spacex, 0, space_width, space_height, space_bits);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, team);
   
+}
+
+void RPSSLFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) 
+{
+  
+  
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    display->drawString(x+50,y+16,"ROCK. PAPER. ");
+    display->drawString(x+50,y+26,"   SCISSORS.  ");
+    display->drawString(x+50,y+36,"SPOCK. LIZARD");
+    if(aliasSet == false)
+    {
+      display->drawString(x+25,y+50,"Set Alias to Unlock");
+      
+    }
+    else
+    {
+      display->drawXbm(x+80, y+52, uparrow_width, uparrow_height, uparrow_bits);
+      display->drawString(x+95,y+49,"= Start");  
+    }
+    
+  
+  
+
+    display->drawXbm(x+0, y+16, spock_width, spock_height, spock_bits);
+  
+ 
+  
+  
+  
+ 
 }
 
 void bsidesLogoFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -197,3 +245,11 @@ void playNinja()
 }
 
 
+FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame,RPSSLFrame, AboutFrame};
+
+// how many frames are there?
+int frameCount = 5;
+
+// Overlays are statically drawn on top of a frame eg. a clock
+OverlayCallback overlays[] = { msOverlay };
+int overlaysCount = 1;
