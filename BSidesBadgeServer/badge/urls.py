@@ -17,7 +17,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic import TemplateView
 #from badge import views
-from badge.views import badgeCheckin,badgeGetHash, badgeAddAlias, badgeAddChallenge, getBadgeDetails, getAllBadges, saveCurrentTeamStandings, RPSSL_api
+from badge.views import badgeCheckin,badgeGetHash, badgeAddAlias, badgeAddChallenge, getBadgeDetails, getAllBadges, saveCurrentTeamStandings, RPSSL_api, aboutPage, FAQ, theGame
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -30,6 +30,9 @@ urlpatterns = [
     url(r'RPSSL/(?P<challengerBadge>[A-Za-z0-9]+)/(?P<selection>[0-9]+)/(?P<badgeID>[A-Za-z0-9]+)/$', csrf_exempt(RPSSL_api.as_view()), name='badgeDetails'),
     url(r'listBadges/$', getAllBadges.as_view(), name='badgeDetails'),
     url(r'saveGameState/$', saveCurrentTeamStandings.as_view(), name='saveCurrentTeamStandings'),
+    url(r'thegame/$', theGame.as_view(), name='thegame'),
+    url(r'faq/$', FAQ.as_view(), name='faq'),
+    url(r'about/$', aboutPage.as_view(), name='about'),
     #url(r'workbench/(?P<badgeID>[0-9]+)$', badgeGetHash.as_view(), name='workbench'),
     
 ]

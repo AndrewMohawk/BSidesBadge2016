@@ -1,0 +1,46 @@
+
+{% extends "base.html" %} {% block content %}
+    
+
+{% load staticfiles %}
+<!--<link rel="stylesheet" href="{% static 'chosen_v1.6.2/chosen.css' %}">--> 
+<script src="{% static 'Highcharts/code/highcharts.js' %}"></script>
+<script src="{% static 'Highcharts/code/modules/exporting.js' %}"></script>
+
+
+<h3>The Game</h3><hr/>
+<div class="alert alert-dismissible alert-danger">
+  
+  <strong>You have already lost!</strong> 
+</div>
+
+<h4>Overview</h4><hr/>
+We initially started the badges with an idea for the game and run a number of models on it, the current playing model is called 'loyalty'.<br/>
+
+The idea with the game is to try and create a faction of loyal friends and followers and ultimately to convert every player to your faction.<br/><br/>
+
+<h4>Communication</h4><hr/>
+Communication is done via an infrared receiver and transmitter within each badge. Badges communicate their badge number via the SONY protocol to each other. When each badge receives a valid badge code it stores it alongside the previous 4 badges it has seen.
+
+
+Periodically the badge will communicate with a badge server via an HTTP POST. It will first receive a key and then 'decrypt' the response from the Server. It will parse this response to update the badge with completed challenges, level, team, status message and Alias.<br/><br/>
+
+<h4>Loyalty!</h4><hr/>
+<h5>Setup</h5><hr/>
+When a badge first joins the network it will receive a random faction (that is not the faction with the most players at that stage) and a level of 1. The factions are red,green and blue
+
+When a badge checks into the server it will tell the server other badges that it has seen. The server will then run the loyalty algorithm on all of the individual pairs of badges between the badge checking in and the ones that it has seen. This algorithm works as described in the below section.<br/><br/>
+
+<h5>Badges that are the same team</h5><hr/>
+
+The badges have a 1 in (10 * current level) chance of defecting to another team because they are too close to people who are the same. Badges that have a level higher than 1 will lose 1 level point when they defect.<br/><br/>
+
+If no badges defect, they have a 1 in 15 chance of levelling one of the badges up, making it more loyal. This badge will gain 1 point of level up to a maximum of 5.<br/><br/>
+
+<h5>Badges are different teams, different levels</h5><hr/>
+If the badges are from different teams but different levels then the badge with the highest level will convert the badge with a lower level to its team. The badge that converted this badge will lose 1 level point.<br/><br/>
+
+<h5>Badges are different teams, same levels</h5><hr/>
+For badges that are different teams but the same level will have a 50/50 chance of converting one of the badges so they are the same team.<br/><br/>
+
+{% endblock %}

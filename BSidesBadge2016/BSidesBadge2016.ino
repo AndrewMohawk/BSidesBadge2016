@@ -69,7 +69,7 @@ int numSpeakerBadges = 0;
 HTTPClient http;
 
 /* Default WiFi SSID details */
-char defaultSSID[32]     = "highway";
+char defaultSSID[32]     = "Highway";
 char defaultPassword[32] = "dangerzone";
 
 /* WiFi struct for EEPROM */
@@ -266,7 +266,7 @@ pinMode(pinStcp, OUTPUT);
   display.clear();
   display.drawXbm(0, 0, monerologo_width, monerologo_height, monerologo_bits);
   display.display();
-  delay(450);
+  delay(1500);
   
 
   

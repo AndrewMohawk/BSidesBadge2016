@@ -62,6 +62,16 @@ def cryptMessage(message,key):
 
 
 
+class aboutPage(TemplateView):
+	template_name = "aboutPage.html"
+
+class FAQ(TemplateView):
+	template_name = "faqPage.html"		
+
+class theGame(TemplateView):
+	template_name = "theGame.html"
+
+
 class RPSSL_api(TemplateView):
 	template_name = "api_badgeDetails"
 	

@@ -248,7 +248,7 @@ void playNinja()
 FrameCallback frames[] = { bsidesLogoFrame, playerInfoFrame, ScheduleFrame, ChallengeFrame,RPSSLFrame, AboutFrame};
 
 // how many frames are there?
-int frameCount = 5;
+int frameCount = 6;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };

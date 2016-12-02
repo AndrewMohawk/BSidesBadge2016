@@ -163,7 +163,7 @@ void readShift()
       {
         konamiCode();
       }
-      else if(Challenges[currentListedChallenge] == "Alias")
+      else if(Challenges[currentListedChallenge] == "Alias" || Challenges[currentListedChallenge] == "RetroPort")
       {
         playAlias();
       }

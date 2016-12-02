@@ -7,13 +7,13 @@ boolean wifiConnect(char* wSSID,char* wPassword,int attempts)
   updating = true;
   WiFi.mode(WIFI_STA) ;
   //Serial.printf("Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode(WIFI_STA) ? "" : "Failed!");
-  //Serial.print("[+] Connecting to network:");Serial.print(wSSID);Serial.print("-- password:");Serial.print(wPassword);Serial.println(".");
+  Serial.print("[+] Connecting to network:");Serial.print(wSSID);Serial.println(".");
   WiFi.begin(wSSID, wPassword);
   int statNum = 0;
   
   while (WiFi.status() != WL_CONNECTED) 
   {
-    //Serial.print(".");
+    Serial.print(".");
     delay(500);
     ESP.wdtFeed();
     if(attempts % 2 == 0)

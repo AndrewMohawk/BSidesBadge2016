@@ -1,0 +1,124 @@
+{% extends "base.html" %} {% block content %}
+    
+
+{% load staticfiles %}
+<!--<link rel="stylesheet" href="{% static 'chosen_v1.6.2/chosen.css' %}">--> 
+<script src="{% static 'Highcharts/code/highcharts.js' %}"></script>
+<script src="{% static 'Highcharts/code/modules/exporting.js' %}"></script>
+
+
+<h4>About the Badges</h4><hr/>
+<div style="text-align: left">
+  <div class="alert alert-dismissible alert-info">All three badges presented at BSides Cape Town 2016</div>
+  <a href="{% static 'images/allthreebadges.jpg' %}" target="_blank">
+	<img alt="All three badges" height="300px" src="{% static 'images/allthreebadges.jpg' %}"/>
+  </a><br/>
+  From left to right, White ( Attendee ), Blue (Speaker/presenter/organiser), Black (Badge Staff)
+</div>
+<br/>
+<h4>Badge Interface</h4><hr/>
+<div style="text-align: left; ">
+  <div class="alert alert-dismissible alert-info">Badge Interface</div>
+  <a href="{% static 'images/onebadge_label.jpg' %}" target="_blank">
+	<img alt="Labelled Badge" height="300px" src="{% static 'images/onebadge_label.jpg' %}"/>
+  </a><br/>
+  
+  The badge has the following components
+  <ul>
+	<li>Buttons</li>
+	<li>Screen</li>
+	<li>Infrared Receiver and Transmitter</li>
+	<li>ESP8266 (processor and WiFi)</li>
+	<li>600mah Lipo Battery</li>
+	<li>USB Charging</li>
+  </ul>
+
+</div>
+<br/>
+<h4>Badge Screens</h4><hr/>
+<div style="text-align: left; ">
+  <div class="alert alert-dismissible alert-info">Different Screens on the badges</div>
+  <a href="{% static 'images/bsidesLogoScreen.jpg' %}" target="_blank">
+	<img alt="Logo Screen" width="100px" src="{% static 'images/bsidesLogoScreen.jpg' %}"/>
+  </a>
+  
+  <a href="{% static 'images/BadgeScreen.jpg' %}" target="_blank">
+	<img alt="Badge Info Screen" width="100px" src="{% static 'images/BadgeScreen.jpg' %}"/>
+  </a>
+  
+  <a href="{% static 'images/ChallengesScreen.jpg' %}" target="_blank">
+	<img alt="Challenges Screen" width="100px" src="{% static 'images/ChallengesScreen.jpg' %}"/>
+  </a>
+  
+  <a href="{% static 'images/RPSSL.jpg' %}" target="_blank">
+	<img alt="Rock Paper Scissors Spock Lizard" width="100px" src="{% static 'images/RPSSL.jpg' %}"/>
+  </a>
+  
+  <a href="{% static 'images/Schedule.jpg' %}" target="_blank">
+	<img alt="Schedule Screen" width="100px" src="{% static 'images/Schedule.jpg' %}"/>
+  </a>
+  <br/><br/>
+  The badges themselves offer 5 different screens that are available listed below as well as playing <a href="{% url 'badge:thegame' %}">The Game</a>. Below lists what each badge has.
+  <br/><br/><h4>Logo Screen</h4><hr/>
+  <a href="{% static 'images/bsidesLogoScreen.jpg' %}" target="_blank">
+	<img alt="Logo Screen" width="350px" src="{% static 'images/bsidesLogoScreen.jpg' %}"/>
+  </a><br/><br/>
+  This screen simply shows the BSides Cape Town 2016 display.
+  
+  <br/><br/><h4>Badge/About Screen</h4><hr/>
+  <a href="{% static 'images/BadgeScreen.jpg' %}" target="_blank">
+	<img alt="Badge Info Screen" width="350px" src="{% static 'images/BadgeScreen.jpg' %}"/>
+  </a><br/>
+  This screen lists the details about your badge, including the following:<br/><br/>
+  * Number of <a href="{% url 'badge:addhash' %}">challenges</a> solved.<br/>
+  * The code used to <a href="{% url 'badge:addalias' %}">change the alias</a><br/>
+  * The Badge ID also used on the alias page<br/>
+  
+  
+  <br/><br/><h4>Challenge Screen</h4><hr/>
+  <a href="{% static 'images/ChallengesScreen.jpg' %}" target="_blank">
+	<img alt="Challenges Screen" width="350px" src="{% static 'images/ChallengesScreen.jpg' %}"/>
+  </a><br/><br/>
+  This screen lists the challenges that you have completed as well as give you a chance to "play" the prize if available.
+  <br/><br/>
+  To use this screen use the keypad on the right (A,B,C,D buttons) to move left and right (A and D) and when you wish to play the 'prize' you can press up (B). <br/>
+  The prizes could be one of the following:<br/><br/>
+  * Warbadging (scan available WiFi networks)<br/>
+  * Pong ( 2 players on one badge )<br/>
+  * Skeleton Dance <br/>
+  * Alias Waterfall <br/><br/>
+  <div class="alert alert-dismissible alert-danger">
+	TO QUIT CHALLENGES PLEASE PRESS TO TWO INNER BUTTONS ( LEFT and A)
+  </div>
+  <br/><br/><h4>Rock, Paper, Scissors, Spock, Lizard</h4><hr/>
+  <a href="{% static 'images/RPSSL.jpg' %}" target="_blank">
+	<img alt="Rock Paper Scissors Spock Lizard" width="350px" src="{% static 'images/RPSSL.jpg' %}"/>
+  </a><br/><br/>
+  This screen is the Rock, Paper, Scissors, Spock, Lizard. To find out about this game you can <a href='https://en.wikipedia.org/wiki/Rock%E2%80%93paper%E2%80%93scissors#Additional_weapons' target='_blank'>click here</a>.
+  <br/><br/>
+  To play this game do the following:<br/>
+  1. Make your selection using the A and D keys between Rock, Paper, Scissors, Spock, Lizard<br/>
+  2. Press the B to start searching for players<br/>
+  3. Put your badge near another badge that is also searching for players<br/>
+  4. When your selection list shows additional badges use the B and C keys to select your opponent ( Note this will be the opponents Badge ID)<br/>
+  5. Win or Lose!<br/><br/><br/>
+  
+  <div class="alert alert-dismissible alert-danger">
+	TO QUIT THIS GAME PLEASE PRESS TO TWO INNER BUTTONS ( LEFT and A)
+  </div>
+  
+  
+  <br/><h4>Schedule</h4><hr/>
+  <a href="{% static 'images/Schedule.jpg' %}" target="_blank">
+	<img alt="Schedule Screen" width="350px" src="{% static 'images/Schedule.jpg' %}"/>
+  </a><br/>
+  The Schedule screen shows.... the schedule.<br/>
+  To navigate this screen use the A and D keys.
+  <br/><br/>
+  <br/><h4>About Page</h4><hr/>
+  This page shows the current build and git commit status.
+</div>
+
+
+
+{% endblock %}
