@@ -80,15 +80,20 @@ struct WiFiSettings {
 
 
 /* Endpoints for badges */
-String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
+/*String hashEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/gethash/"; 
 String checkInEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/checkin/";
 String blankEndPoint = "http://badges2016.andrewmohawk.com:8000/badge/";
 
-/*
+
 String hashEndPoint = "http://10.85.0.241:8000/badge/gethash/";
 String checkInEndPoint = "http://10.85.0.241:8000/badge/checkin/";
 String blankEndPoint = "http://10.85.0.241:8000/badge/";
 */
+String hashEndPoint = "http://badge.bsidescapetown.co.za:8000/badge/gethash/"; 
+String checkInEndPoint = "http://badge.bsidescapetown.co.za:8000/badge/checkin/";
+String blankEndPoint = "http://badge.bsidescapetown.co.za:8000/badge/";
+
+
 /* Badge Name and Number */
 String badgeName = "";
 unsigned int badgeNumber;
@@ -208,8 +213,8 @@ int wifiScanner_networksFound = 0;
 int wifiScanner_networksScreen_y = 10;
 boolean wifiScanner_scanfornetworks = false;
 
-String badgeVersion = "0.54";
-String badgeGitHash = "a04b619fd81ac3c14d140ac2f635a7e76b870bdf";
+String badgeVersion = "0.56";
+String badgeGitHash = "260d2811cf090643b3c3ac91cf1bb43b40031ac0";
 
 /* Helpers */
 
