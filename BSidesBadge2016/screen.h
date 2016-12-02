@@ -113,13 +113,13 @@ void playerInfoFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x,
   display->drawString(x+32,y+16,"Challenges:" + String(completedChallenges));
     
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+26,"Badge:");
+  display->drawString(x+32,y+26,"Code:");
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+36,badgeName);
+  display->drawString(x+32,y+36,badgeVerifyCode);
 
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x+32,y+45,"Code:");
-  display->drawString(x+32,y+54,badgeVerifyCode);
+  display->drawString(x+32,y+45,"Badge:");
+  display->drawString(x+32,y+54,badgeName);
   
 }
 

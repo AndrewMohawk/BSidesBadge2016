@@ -208,8 +208,8 @@ int wifiScanner_networksFound = 0;
 int wifiScanner_networksScreen_y = 10;
 boolean wifiScanner_scanfornetworks = false;
 
-String badgeVersion = "0.49";
-String badgeGitHash = "8514b7de59f6835b4b3ab465eb8513b0f141ab1a";
+String badgeVersion = "0.54";
+String badgeGitHash = "a04b619fd81ac3c14d140ac2f635a7e76b870bdf";
 
 /* Helpers */
 
